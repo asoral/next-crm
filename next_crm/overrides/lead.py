@@ -225,7 +225,7 @@ class Lead(Lead):
                 }
             )
 
-        g.insert(ignore_permissions=True)
+        opportunity.insert(ignore_permissions=True)
         link_contact_to_doc(contact, "Opportunity", opportunity.name)
         set_opportunity_primary_contact(opportunity.name)
         return opportunity.name
