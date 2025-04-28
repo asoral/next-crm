@@ -41,16 +41,19 @@ def delete_linked_event(docname):
 
 
 def unlink_gmail_thread(docname):
-    gmail_thread = frappe.qb.DocType("Gmail Thread")
+    try:
+        gmail_thread = frappe.qb.DocType("Gmail Thread")
 
-    query = (
-        frappe.qb.update(gmail_thread)
-        .set(gmail_thread.reference_doctype, None)
-        .set(gmail_thread.reference_name, None)
-        .set(gmail_thread.status, "Open")
-        .where(gmail_thread.reference_doctype == "Lead")
-        .where(gmail_thread.reference_name == docname)
-        .get_sql()
-    )
+        query = (
+            frappe.qb.update(gmail_thread)
+            .set(gmail_thread.reference_doctype, None)
+            .set(gmail_thread.reference_name, None)
+            .set(gmail_thread.status, "Open")
+            .where(gmail_thread.reference_doctype == "Lead")
+            .where(gmail_thread.reference_name == docname)
+            .get_sql()
+        )
 
-    frappe.db.sql(query)
+        frappe.db.sql(query)
+    except:
+        frappe.log_error(title="Unlink Gmail Thread", message=frappe.get_traceback())
