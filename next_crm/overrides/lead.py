@@ -121,7 +121,7 @@ class Lead(Lead):
                 "phone_nos", {"phone": self.mobile_no, "is_primary_mobile_no": 1}
             )
 
-        contact.insert()
+        contact.insert(ignore_permissions=True)
         contact.reload()  # load changes by hooks on contact
 
         return contact.name
@@ -166,7 +166,7 @@ class Lead(Lead):
                 "annual_revenue": self.annual_revenue,
             }
         )
-        prospect.insert()
+        prospect.insert(ignore_permissions=True)
         return {"Prospect": prospect.name}
 
     def contact_exists(self, throw=True):
@@ -225,7 +225,7 @@ class Lead(Lead):
                 }
             )
 
-        opportunity.insert()
+        g.insert(ignore_permissions=True)
         link_contact_to_doc(contact, "Opportunity", opportunity.name)
         set_opportunity_primary_contact(opportunity.name)
         return opportunity.name
