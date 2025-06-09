@@ -22,7 +22,11 @@ def notify_mentions(doc):
         doctype = doc.reference_doctype
         if doctype.startswith("CRM "):
             doctype = doctype[4:].lower()
-        name = reference_doc.title or reference_doc.name or None
+        name = None
+        if reference_doc.meta.has_field("title"):
+            name = reference_doc.title
+        elif not name:
+            name = reference_doc.name
         notification_text = f"""
             <div class="mb-2 leading-5 text-ink-gray-5">
                 <span class="font-medium text-ink-gray-9">{ owner }</span>
