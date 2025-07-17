@@ -22,10 +22,7 @@
 
   </div>
   <div v-else class="w-[90%] mx-auto space-y-3 mt-2">
-    <!-- <div v-if="loading" class="text-center text-ink-gray-5">
-      {{ __('Loading quotations...') }}
-    </div> -->
-
+  
     
     <div  class="space-y-4">
       <div
