@@ -38,9 +38,24 @@
         </button>
       </template>
       <template #tab-panel>
-        <Activities ref="activities" doctype="Opportunity" :tabs="tabs" v-model:reload="reload"
-          v-model:tabIndex="tabIndex" v-model="opportunity" />
+        <QuotationList
+  v-if="tabs[tabIndex].name === 'Quotation' && opportunity?.data?.name"
+  :opportunity-id="opportunity.data.name"
+  :count="tabs.find(tab => tab.name === 'Quotation')?.count"
+/>
+
+        <Activities
+          ref="activities"
+          doctype="Opportunity"
+          :tabs="tabs"
+          v-model:reload="reload"
+          v-model:tabIndex="tabIndex"
+          v-model="opportunity"
+        />
       </template>
+      
+      
+      
     </Tabs>
     <Resizer side="right" class="flex flex-col justify-between border-l">
       <div class="flex h-10.5 cursor-copy items-center border-b px-5 py-2.5 text-lg font-medium text-ink-gray-9"
@@ -94,6 +109,12 @@
             <Tooltip :text="__('Delete Opportunity')">
               <Button theme="red" class="h-7 w-7" @click="deleteOpportunity">
                 <FeatherIcon name="trash-2" class="h-4 w-4" />
+              </Button>
+            </Tooltip>
+
+            <Tooltip :text="__('Check Details')">
+              <Button  class="h-7 w-7" @click="redirectToLead">
+                <FeatherIcon name="external-link" class="h-4 w-4" />
               </Button>
             </Tooltip>
           </div>
@@ -392,7 +413,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { useActiveTabManager } from '@/composables/useActiveTabManager'
 import { getMeta } from '@/stores/meta'
 import { replaceMeWithUser } from '../utils'
-
+import ExportIcon from '@/components/Icons/ExportIcon.vue'
+import QuotationList from '../components/ListViews/QuotationList.vue'
 const { $dialog, $socket, makeCall } = globalStore()
 const { statusOptions, getDealStatus } = statusesStore()
 const { isManager, getUser } = usersStore()
@@ -606,6 +628,9 @@ usePageMeta(() => {
   }
 })
 
+const quotationCount = ref(0)
+
+
 const tabs = computed(() => {
   let tabOptions = [
     {
@@ -663,6 +688,12 @@ const tabs = computed(() => {
       icon: WhatsAppIcon,
       condition: () => whatsappEnabled.value,
       count: ref(0)
+    },
+    {
+      name: 'Quotation',
+      label: __('Quotation'),
+      icon: NoteIcon,
+      count: quotationCount
     },
   ]
   return tabOptions.filter((tab) => (tab.condition ? tab.condition() : true))
@@ -1040,6 +1071,22 @@ const createProjectFromOpportunity = async () => {
 
 async function deleteOpportunity() {
   showDeleteModal.value = true;
+}
+
+function redirectToLead() {
+  const docType = opportunity.data.opportunity_from; 
+  const docName = opportunity.data.party_name;
+
+  if (!docType || !docName) {
+    errorMessage(__('No linked party to redirect.'));
+    return;
+  }
+
+  const routeBase = docType === 'Lead'
+    ? `/leads/${docName}`
+    : `/customers/${docName}`;
+
+  router.push(`${routeBase}#activity`);
 }
 
 const activities = ref(null)

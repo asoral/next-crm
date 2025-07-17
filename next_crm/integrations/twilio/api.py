@@ -1,4 +1,4 @@
-import json
+import json 
 
 import frappe
 from frappe import _
@@ -200,4 +200,9 @@ def get_lead_or_opportunity_from_number(call):
         if not doc:
             doc = find_record(doctype, number)
 
-    return doc, doctype
+    return doc, doctype      
+
+
+
+
+

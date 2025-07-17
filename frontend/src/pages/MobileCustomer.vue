@@ -10,7 +10,7 @@
       </Breadcrumbs>
     </header>
   </LayoutHeader>
-  <div v-if="customer.doc" class="flex flex-col h-full overflow-hidden">
+  <div v-if="customer.doc" class="flex flex-col h-full">
     <FileUploader
       @success="changeCustomerImage"
       :validateFile="validateFile"
@@ -50,7 +50,7 @@
                 class="!absolute bottom-0 left-0 right-0"
               >
                 <div
-                  class="z-1 absolute bottom-0 left-0 right-0 flex h-14 cursor-pointer items-center justify-center rounded-b-full bg-black bg-opacity-40 pt-5 opacity-0 duration-300 ease-in-out group-hover:opacity-100"
+                  class="absolute bottom-0 left-0 right-0 flex h-14 cursor-pointer items-center justify-center rounded-b-full bg-black bg-opacity-40 pt-5 opacity-0 duration-300 ease-in-out group-hover:opacity-100"
                   style="
                     -webkit-clip-path: inset(22px 0 0 0);
                     clip-path: inset(22px 0 0 0);
@@ -62,12 +62,13 @@
             </div>
             <div class="flex flex-col gap-2 truncate">
               <div class="truncate text-lg font-medium text-ink-gray-9">
-                {{ customer.doc.name }}
+                {{ customer.doc.customer_name }}
               </div>
-              <div class="flex items-center gap-1.5">
+              <div class="flex items-center gap-1.5 relative">
                 <Button @click="openWebsite">
                   <FeatherIcon name="link" class="h-4 w-4" />
                 </Button>
+              
                 <Button
                   :label="__('Delete')"
                   theme="red"
@@ -78,13 +79,52 @@
                     <FeatherIcon name="trash-2" class="h-4 w-4" />
                   </template>
                 </Button>
+              
+                <div class="relative">
+                  <Button
+                    label="Add Activity"
+                    theme="blue"
+                    size="sm"
+                    @click="toggleDropdown"
+                    ref="activityBtn"
+                  >
+                    <template #prefix>
+                      <FeatherIcon name="plus" class="h-4 w-4" />
+                    </template>
+                  </Button>
+                </div>
+                
+                <!-- This goes OUTSIDE the relative container -->
+                <div
+                  v-if="showDropdown"
+                  class="fixed z-[9999] w-40 bg-white border border-gray-200 rounded shadow"
+                  :style="{ top: dropdownPosition.top + 'px', left: dropdownPosition.left + 'px' }"
+                >
+                  <ul>
+                    <li
+                      v-for="option in activityOptions"
+                      :key="option"
+                      @click="selectActivity(option)"
+                      class="cursor-pointer px-4 py-2 hover:bg-gray-100 text-sm"
+                    >
+                      {{ option }}
+                    </li>
+                  </ul>
+                </div>
+                
               </div>
+              
+              
               <ErrorMessage :message="__(error)" />
             </div>
           </div>
         </div>
+        
       </template>
+      
     </FileUploader>
+  
+    
     <Tabs as="div" v-model="tabIndex" :tabs="tabs" class="overflow-auto">
       <TabList class="!px-4" v-slot="{ tab, selected }">
         <button
@@ -95,6 +135,7 @@
           <component v-if="tab.icon" :is="tab.icon" class="h-5" />
           {{ __(tab.label) }}
           <Badge
+
             class="group-hover:bg-surface-gray-7"
             :class="[selected ? 'bg-surface-gray-7' : 'bg-gray-600']"
             variant="solid"
@@ -151,8 +192,14 @@
           :columns="columns"
           :options="{ selectable: false, showTooltip: false }"
         />
+        <ActivityList
+        v-if="tab.label === 'Activities'"
+        :customer-id="customer.doc.name"
+        :count="tabs.find(tab => tab.label === 'Activities').count"
+
+      />
         <div
-          v-if="!rows.length && tab.name !== 'Details'"
+          v-if="!rows.length && tab.name !== 'Details' && !tab.label === 'Activities'"
           class="grid flex-1 place-items-center text-xl font-medium text-ink-gray-4"
         >
           <div class="flex flex-col items-center justify-center space-y-3">
@@ -161,8 +208,15 @@
           </div>
         </div>
       </TabPanel>
+
+
+
     </Tabs>
+
+
+
   </div>
+ 
   <AddressModal v-model="showAddressModal" v-model:address="_address" />
   <DeleteModal
     v-model="showDeleteModal"
@@ -170,6 +224,54 @@
     :docname="props.customerId"
     redirect-to="Customers"
   />
+
+
+  <template>
+    <Dialog
+      v-model="showActivityModal"
+      :options="{
+        title: `Create Event`,
+        size: 'md',
+        actions: [
+          {
+            label: 'Create',
+            variant: 'solid',
+            onClick: createActivity,
+          },
+        ],
+      }"
+    >
+      <template #body-title>
+        <h3 class="text-xl font-semibold text-ink-gray-9">
+          Create Event
+        </h3>
+      </template>
+  
+      <template #body-content>
+        <div class="flex flex-col gap-4">
+          <Input
+            label="Date"
+            type="date"
+            v-model="activityForm.date"
+            required
+          />
+  
+         
+  
+          <Input
+            label="Subject"
+            v-model="activityForm.subject"
+            required
+          />
+  
+          <Textarea
+            label="Description"
+            v-model="activityForm.description"
+          />
+        </div>
+      </template>
+    </Dialog>
+  </template>
 </template>
 
 <script setup>
@@ -190,6 +292,9 @@ import AddressIcon from '@/components/Icons/AddressIcon.vue'
 import { usersStore } from '@/stores/users'
 import { statusesStore } from '@/stores/statuses'
 import { getView } from '@/utils/view'
+import ActivityList from "@/components/ListViews/ActivityList.vue"
+import ActivityIcon from '@/components/Icons/ActivityIcon.vue'
+
 import {
   dateFormat,
   dateTooltipFormat,
@@ -210,8 +315,12 @@ import {
   createDocumentResource,
   usePageMeta,
   createResource,
+  Dialog,
+  Input,
+  Select,
+  Textarea
 } from 'frappe-ui'
-import { h, computed, ref } from 'vue'
+import { h, computed, ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 const props = defineProps({
@@ -226,6 +335,18 @@ const { getDealStatus } = statusesStore()
 
 const route = useRoute()
 const showDeleteModal = ref(false)
+const showDropdown = ref(false)
+const showActivityModal = ref(false)
+const selectedActivity = ref('')
+const activityOptions = ['Event', 'Call', 'Meeting', 'Sent/Received Email', 'Follow Up', 'Demo', 'Other']
+const userList = createListResource({
+  doctype: 'User',
+  fields: ['name', 'full_name'],
+  filters: [['enabled', '=', 1], ['user_type', '=', 'System User']],
+  limit: 100,
+  auto: true,
+})
+
 
 const customer = createDocumentResource({
   doctype: 'Customer',
@@ -354,7 +475,7 @@ function getParsedFields(data) {
     }
   })
 }
-
+const activityCount = ref(0)
 const tabIndex = ref(0)
 const tabs = [
   {
@@ -379,6 +500,11 @@ const tabs = [
     label: __('Addresses'),
     icon: h(AddressIcon, { class: 'h-4 w-4' }),
     count: computed(() => addresses.value.data?.length),
+  },
+  {
+    label: 'Activities',
+    icon: h(ActivityIcon, { class: 'h-4 w-4' }),
+    count: activityCount
   },
 ]
 
@@ -649,4 +775,83 @@ const addressColumns = [
     width: '8rem',
   },
 ]
+
+
+
+const activityForm = ref({
+  date: '',
+  assigned_to: '',
+  subject: '',
+  description: '',
+})
+
+// Close dropdown and show modal
+function selectActivity(option) {
+  selectedActivity.value = option
+  showDropdown.value = false
+  showActivityModal.value = true
+}
+
+async function createActivity() {
+  try {
+    const opportunity = await call('frappe.client.insert', {
+      doc: {
+        doctype: 'Opportunity',
+        customer: customer.doc.name,
+        opportunity_from: 'Customer',
+        party_name:customer.doc.name,
+        status: 'Open',
+      },
+    })
+// console.log("opportunity", opportunity.name)
+    const event = await call('frappe.client.insert', {
+      doc: {
+        doctype: 'Event',
+        subject: activityForm.value.subject,
+        event_category: selectedActivity.value,
+        description: activityForm.value.description,
+
+        starts_on: activityForm.value.date,
+       event_participants: [
+  {
+    reference_doctype: 'Opportunity',
+    reference_docname: opportunity.name,
+  }
+]
+      },
+    })
+
+    createToast({
+      title: 'Activity Created',
+      icon: 'check',
+      variant: 'success',
+    })
+    showActivityModal.value = false
+    window.location.reload()
+
+  } catch (error) {
+    createToast({
+      title: 'Error',
+      icon: 'x',
+      variant: 'error',
+      message: error.message,
+    })
+  }
+}
+
+const activityBtn = ref(null)
+const dropdownPosition = ref({ top: 0, left: 0 })
+
+function toggleDropdown() {
+  showDropdown.value = !showDropdown.value
+  if (showDropdown.value && activityBtn.value) {
+    const rect = activityBtn.value.$el.getBoundingClientRect()
+    dropdownPosition.value = {
+      top: rect.bottom + window.scrollY,
+      left: rect.left + window.scrollX,
+    }
+  }
+}
+
+
 </script>

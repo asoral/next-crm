@@ -31,18 +31,27 @@
     </header>
   </LayoutHeader>
   <div
-    v-if="opportunity.data"
-    class="flex h-12 items-center justify-between gap-2 border-b px-3 py-2.5"
-  >
+  v-if="opportunity.data"
+  class="flex h-12 items-center justify-between border-b px-3 py-2.5"
+>
+  <div class="flex items-center gap-2">
     <AssignTo
       v-model="opportunity.data._assignedTo"
       :data="opportunity.data"
       doctype="Opportunity"
     />
-    <div class="flex items-center gap-2">
-      <CustomActions v-if="customActions" :actions="customActions" />
-    </div>
+    <Tooltip :text="__('Check Details')">
+      <Button class="h-7 w-7" @click="redirectToLead">
+        <FeatherIcon name="external-link" class="h-4 w-4" />
+      </Button>
+    </Tooltip>
   </div>
+
+  <div class="flex items-center gap-2">
+    <CustomActions v-if="customActions" :actions="customActions" />
+  </div>
+</div>
+
   <div v-if="opportunity.data" class="flex h-full overflow-hidden">
     <Tabs as="div" v-model="tabIndex" :tabs="tabs" class="overflow-auto">
       <TabList class="!px-3" />
@@ -204,6 +213,11 @@
             </div>
           </div>
         </div>
+        <QuotationList
+        v-if="tabs[tabIndex].name === 'Quotation'"
+        :opportunity-id="opportunity.data.name"
+        :count="tabs.find(tab => tab.name === 'Quotation').count"
+      />
         <Activities
           v-else
           doctype="Opportunity"
@@ -212,6 +226,7 @@
           v-model:tabIndex="tabIndex"
           v-model="opportunity"
         />
+
       </TabPanel>
     </Tabs>
   </div>
@@ -262,6 +277,9 @@ import { createToast, setupAssignees, setupCustomizations } from '@/utils'
 import { getView } from '@/utils/view'
 import { globalStore } from '@/stores/global'
 import { statusesStore } from '@/stores/statuses'
+import QuotationList from '../components/ListViews/QuotationList.vue'
+import ExportIcon from '@/components/Icons/ExportIcon.vue'
+
 import {
   whatsappEnabled,
   callEnabled,
@@ -277,6 +295,7 @@ import {
   TabPanel,
   Breadcrumbs,
   call,
+  Tooltip
 } from 'frappe-ui'
 import { ref, computed, h, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -418,6 +437,28 @@ const breadcrumbs = computed(() => {
   return items
 })
 
+
+
+function redirectToLead() {
+  const docType = opportunity.data.opportunity_from; 
+  const docName = opportunity.data.party_name;
+
+  if (!docType || !docName) {
+    errorMessage(__('No linked party to redirect.'));
+    return;
+  }
+
+  const routeBase = docType === 'Lead'
+    ? `/leads/${docName}`
+    : `/customers/${docName}`;
+
+  router.push(`${routeBase}#activity`);
+}
+
+
+const quotationCount = ref(0)
+
+
 const tabs = computed(() => {
   let tabOptions = [
     {
@@ -468,6 +509,12 @@ const tabs = computed(() => {
       icon: WhatsAppIcon,
       condition: () => whatsappEnabled.value,
     },
+    {
+      name: 'Quotation',
+      label: __('Quotation'),
+      icon: NoteIcon,
+      count: quotationCount
+    },
   ]
   return tabOptions.filter((tab) => (tab.condition ? tab.condition() : true))
 })
@@ -482,8 +529,19 @@ const fieldsLayout = createResource({
 })
 
 function getParsedFields(sections) {
+  if (!Array.isArray(sections)) {
+    console.warn('Invalid sections passed to getParsedFields:', sections)
+    return []
+  }
+
   sections.forEach((section) => {
     if (section.name == 'contacts_section') return
+
+    if (!Array.isArray(section.fields)) {
+      console.warn('Missing or invalid fields in section:', section)
+      section.fields = [] 
+    }
+
     section.fields.forEach((field) => {
       if (field.name == 'customer') {
         field.create = (value, close) => {
@@ -499,8 +557,10 @@ function getParsedFields(sections) {
       }
     })
   })
+
   return sections
 }
+
 
 const showContactModal = ref(false)
 const _contact = ref({})
