@@ -230,6 +230,8 @@
       </TabPanel>
     </Tabs>
   </div>
+  <LostReasonModal v-if="opportunity?.data?.name" v-model="showLostReasonModal" :opportunity="opportunity"
+    @reload="() => reload = true" />
   <CustomerModal
     v-model="showCustomerModal"
     v-model:customer="_customer"
@@ -279,6 +281,7 @@ import { globalStore } from '@/stores/global'
 import { statusesStore } from '@/stores/statuses'
 import QuotationList from '../components/ListViews/QuotationList.vue'
 import ExportIcon from '@/components/Icons/ExportIcon.vue'
+import LostReasonModal from '@/components/Modals/LostReasonModal.vue'
 
 import {
   whatsappEnabled,
@@ -304,6 +307,8 @@ const { $dialog, $socket } = globalStore()
 const { statusOptions, getDealStatus } = statusesStore()
 const route = useRoute()
 const router = useRouter()
+const showLostReasonModal = ref(false)
+
 
 const props = defineProps({
   opportunityId: {
@@ -661,6 +666,14 @@ const opportunityContacts = createResource({
 })
 
 function updateField(name, value, callback) {
+  const isStatusField = name === "status";
+
+if (isStatusField && opportunity.data[name] === value && value != "Won") {
+  return;
+} else if (isStatusField && value === "Lost") {
+  showLostReasonModal.value = true;
+  return;
+}
   updateOpportunity(name, value, () => {
     opportunity.data[name] = value
     callback?.()

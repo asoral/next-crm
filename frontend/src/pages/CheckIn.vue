@@ -23,7 +23,6 @@
 			<div class="rounded border-4  w-full h-170">
 				<iframe
 					width="100%"
-					
 					frameborder="0"
 					scrolling="no"
 					marginheight="0"
@@ -63,8 +62,6 @@ import { computed, inject, ref, onMounted, onBeforeUnmount, provide } from "vue"
 import { IonModal, modalController } from "@ionic/vue"
 import { formatTimestamp } from "@/utils/formatters"
 import axios from 'axios'
-
-
 onBeforeUnmount(() => {
 	socket.emit("doctype_unsubscribe", DOCTYPE)
 	socket.off("list_update")
@@ -74,7 +71,6 @@ onBeforeUnmount(() => {
 		videoRef.value.srcObject = null
 	}
 })
-
 
 const DOCTYPE = "Employee Checkin"
 const socket = inject("$socket")

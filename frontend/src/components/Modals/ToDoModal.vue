@@ -359,7 +359,7 @@ async function render() {
         if (_todo.value.reference_type === 'Lead') {
           referenceTitle.value = doc.title || doc.lead_name || doc.name 
         } else if (_todo.value.reference_type === 'Opportunity') {
-          referenceTitle.value = doc.title || doc.opportunity_name || doc.name
+          referenceTitle.value = doc.customer_name || doc.opportunity_name || doc.name
         } else {
           referenceTitle.value = doc.name
         }

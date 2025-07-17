@@ -547,6 +547,10 @@
       </div>
     </template>
   </Dialog>
+
+  <LostReasonModal v-if="lead?.data?.name" v-model="showLostReasonModal" :lead="lead"
+    @reload="() => reload = true" />
+
   <ContactModal
     v-model="showContactModal"
     :contact="_contact"
@@ -630,6 +634,8 @@ import SLASection from '@/components/SLASection.vue'
 import CustomActions from '@/components/CustomActions.vue'
 import ExportIcon from '@/components/Icons/ExportIcon.vue'
 import QuotationList from '../components/ListViews/QuotationList.vue'
+import LostReasonModal from '@/components/Modals/LostReasonModal.vue'
+
 import {
   openWebsite,
   createToast,
@@ -679,6 +685,8 @@ const customActions = ref([])
 const customStatuses = ref([])
 const showAssignmentModal = ref(false)
 const showDeleteModal = ref(false)
+const showLostReasonModal = ref(false)
+
 
 const _address = ref({})
 const lead = createResource({
@@ -1053,7 +1061,35 @@ const fieldsLayout = createResource({
   auto: true,
 })
 
-function updateField(name, value, callback) {
+async function updateField(name, value, callback) {
+  const isStatusField = name === "status";
+
+if (isStatusField && lead.data[name] === value) {
+  return;
+}
+
+if (isStatusField && value === "Junk") {
+  try {
+    const res = await call('frappe.client.get_list', {
+      doctype: 'Opportunity',
+      filters: {
+        party_name: lead.data.name,
+        opportunity_from: 'Lead'
+      },
+      limit: 1,
+    });
+console.log('res', res)
+const hasOpportunity = res.length > 0;
+      console.log('Opportunity check:', res, 'Has Opportunity:', hasOpportunity);
+
+      if (!hasOpportunity) {
+        showLostReasonModal.value = true;
+        return;
+      }
+    } catch (err) {
+      console.error('Error checking opportunity:', err);
+    }
+  }
   updateLead(name, value, () => {
     lead.data[name] = value
     callback?.()

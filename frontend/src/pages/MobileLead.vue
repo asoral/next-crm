@@ -97,6 +97,8 @@
       </TabPanel>
     </Tabs>
   </div>
+
+
   <Dialog
     v-model="showConvertToOpportunityModal"
     :options="{
@@ -163,6 +165,9 @@
       </div>
     </template>
   </Dialog>
+
+  <LostReasonModal v-if="lead?.data?.name" v-model="showLostReasonModal" :lead="lead"
+  @reload="() => reload = true" />
 </template>
 <script setup>
 import Icon from '@/components/Icon.vue'
@@ -193,6 +198,7 @@ import { statusesStore } from '@/stores/statuses'
 import ExportIcon from '@/components/Icons/ExportIcon.vue'
 import QuotationList from '../components/ListViews/QuotationList.vue'
 import { capture } from '@/telemetry'
+import LostReasonModal from '@/components/Modals/LostReasonModal.vue'
 
 import {
   whatsappEnabled,
@@ -227,6 +233,7 @@ const props = defineProps({
 
 const customActions = ref([])
 const customStatuses = ref([])
+const showLostReasonModal = ref(false)
 
 const lead = createResource({
   url: '/api/method/next_crm.api.lead.get_lead',
@@ -416,7 +423,36 @@ const fieldsLayout = createResource({
   auto: true,
 })
 
-function updateField(name, value, callback) {
+async function updateField(name, value, callback) {
+  const isStatusField = name === "status";
+
+if (isStatusField && lead.data[name] === value) {
+  return;
+}
+
+if (isStatusField && value === "Junk") {
+  try {
+    const res = await call('frappe.client.get_list', {
+      doctype: 'Opportunity',
+      filters: {
+        party_name: lead.data.name,
+        opportunity_from: 'Lead'
+      },
+      limit: 1,
+    });
+console.log('res', res)
+const hasOpportunity = res.length > 0;
+      console.log('Opportunity check:', res, 'Has Opportunity:', hasOpportunity);
+
+      if (!hasOpportunity) {
+        showLostReasonModal.value = true;
+        return;
+      }
+    } catch (err) {
+      console.error('Error checking opportunity:', err);
+    }
+  }
+
   updateLead(name, value, () => {
     lead.data[name] = value
     callback?.()

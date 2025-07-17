@@ -10,9 +10,10 @@
           variant: 'solid',
           disabled: selectedLostReason.length === 0,
           onClick: async () => {
-            await updateOpportunity()
+            await updateLostInfo()
             show = false
           },
+          
         },
       ],
     }"
@@ -90,6 +91,10 @@ const props = defineProps({
     default: {},
     type: Object,
     required: true,
+  },
+  lead: {
+    type: Object,
+    default: null,
   },
 })
 const emit = defineEmits(['reload'])
@@ -173,4 +178,71 @@ watch(show, async (val) => {
     await getCompetitors()
   }
 })
+
+
+const updateLostInfo = async () => {
+  const isLead = !!props.lead
+  const doc = props.opportunity?.data ?? props.lead?.data
+
+  console.log('doc', doc.name)
+  if (!doc?.name) {
+    console.error('No document name found for update')
+    return
+  }
+
+  try {
+    if (isLead) {
+  await call('frappe.client.set_value', {
+    doctype: 'Lead',
+    name: doc.name,
+    fieldname: {
+      status: 'Junk',
+      custom_lost_reason: selectedLostReason.value.map(val => ({
+        lost_reason: val,
+        doctype: 'Opportunity Lost Reason Detail',
+        parentfield: 'custom_lost_reason',
+        parenttype: 'Lead',
+      })),
+      custom_compititer: selectedCompetitors.value.map(val => ({
+        competitor: val,
+        doctype: 'Competitor Detail', // replace with actual doctype
+        parentfield: 'custom_compititer',
+        parenttype: 'Lead',
+      })),
+      custom_detailed_reason: detailedReason.value || '',
+    },
+  })
+}
+
+ else {
+      await call('next_crm.api.opportunity.declare_enquiry_lost_api', {
+        name: doc.name,
+        lost_reasons_list: selectedLostReason.value.map((item) => ({
+          lost_reason: item,
+        })),
+        competitors: selectedCompetitors.value.map((item) => ({
+          competitor: item,
+        })),
+        detailed_reason: detailedReason.value,
+      })
+    }
+
+    props.lead?.reload?.()
+    props.opportunity?.reload?.()
+    emit('reload')
+
+    createToast({
+      title: __(isLead ? 'Lead updated' : 'Opportunity updated'),
+      icon: 'check',
+      iconClasses: 'text-ink-green-3',
+    })
+  } catch (error) {
+    errorMessage(__('Error updating ' + (isLead ? 'Lead' : 'Opportunity')))
+    console.error('Update Error:', error)
+    throw error
+  }
+}
+
+
+
 </script>
