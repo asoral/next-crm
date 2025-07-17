@@ -1,5 +1,5 @@
 <template>
-  <div class="activity group">
+  <div class="activity group overflow-hidden">
     <div class="mb-1 flex items-center justify-stretch gap-2 py-1 text-base">
       <div class="inline-flex items-center flex-wrap gap-1 text-ink-gray-5">
         <UserAvatar class="mr-1" :user="note.owner" size="md" />
@@ -53,6 +53,12 @@
         editor-class="!prose-sm max-w-none !text-sm text-ink-gray-5 focus:outline-none"
         class="flex-1 overflow-x-hidden"
       />
+      <NoteAttachments
+        :note_name="note?.name"
+        :editMode="false"
+        :attachments="filteredAttachments"
+        @reload="notes?.value?.reload()"
+      />
     </div>
     <div v-if="note.noteReplies?.length" class="ml-6 mt-2 space-y-3 border-l border-gray-200 pl-4">
       <NoteArea :modalRef="props.modalRef" v-for="reply in note.noteReplies" :note="reply" v-model="notes" />
@@ -66,6 +72,8 @@ import { Tooltip, Dropdown, TextEditor, call } from 'frappe-ui'
 import { usersStore } from '@/stores/users'
 import ReplyIcon from '@/components/Icons/ReplyIcon.vue'
 import { createToast } from '@/utils'
+import NoteAttachments from './NoteAttachments.vue'
+import { ref, watch, onMounted } from 'vue'
 
 const props = defineProps({
   note: Object,
@@ -81,6 +89,23 @@ const emit = defineEmits(['reply-note'])
 function replyNote() {
   emit('reply-note', props.note)
 }
+
+const filteredAttachments = ref([])
+
+onMounted(() => {
+  watch(
+    [() => notes?.value?.data?.attachments, () => props.note],
+    ([attachments, note]) => {
+      const fileNames = note?.attachments?.map((item) => item.filename) || []
+      if (!attachments || fileNames.length === 0) {
+        filteredAttachments.value = []
+        return
+      }
+      filteredAttachments.value = attachments.filter((att) => fileNames.includes(att.name))
+    },
+    { immediate: true },
+  )
+})
 
 async function deleteNote(name) {
   try {

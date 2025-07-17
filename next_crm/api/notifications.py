@@ -31,17 +31,9 @@ def get_notifications():
                 "notification_text": notification.notification_text,
                 "notification_type_doctype": notification.notification_type_doctype,
                 "notification_type_doc": notification.notification_type_doc,
-                "reference_doctype": (
-                    "opportunity"
-                    if notification.reference_doctype == "Opportunity"
-                    else "lead"
-                ),
+                "reference_doctype": notification.reference_doctype,
                 "reference_name": notification.reference_name,
-                "route_name": (
-                    "Opportunity"
-                    if notification.reference_doctype == "Opportunity"
-                    else "Lead"
-                ),
+                "route_name": notification.reference_doctype,
             }
         )
 
@@ -80,3 +72,12 @@ def get_hash(notification):
         if "has been removed by" in notification.message:
             _hash = ""
     return _hash
+
+
+@frappe.whitelist()
+def clear_all_notifications():
+    """
+    Clear all notifications for the current user.
+    """
+    user = frappe.session.user
+    frappe.db.delete("CRM Notification", {"to_user": user})

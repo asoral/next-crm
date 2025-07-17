@@ -82,7 +82,12 @@
         </div>
       </div>
       <div v-else-if="title == 'Attachments'" class="px-3 pb-3 sm:px-10 sm:pb-5">
-        <AttachmentArea :attachments="activities" @reload="all_activities.reload()" />
+        <AttachmentArea
+          :docname="doc?.data?.name"
+          :doctype="doc?.data?.doctype"
+          :attachments="activities"
+          @reload="all_activities.reload()"
+        />
       </div>
       <div
         v-else
@@ -292,6 +297,7 @@
       v-if="['Emails', 'Comments', 'Activity', 'Notes'].includes(title)"
       v-model="doc"
       v-model:reload="reload_email"
+      v-model:activities="all_activities"
       :doctype="doctype"
     />
     <WhatsAppBox
@@ -481,7 +487,7 @@ const activities = computed(() => {
       name: note.name,
       type: 'note',
       value: 'added a note',
-      attachments: [],
+      attachments: note.attachments || [],
     }))
 
     _activities = [..._activities, ...notesAsActivities]

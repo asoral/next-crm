@@ -535,9 +535,6 @@ function updateOpportunity(fieldname, value, callback) {
         iconClasses: 'text-ink-green-3',
       })
       callback?.()
-      if (data.status === "Won") {
-        showCreateProjectModal.value = true;
-      }
     },
     onError: (err) => {
       createToast({
@@ -939,7 +936,9 @@ function triggerCall() {
 function updateField(name, value, callback) {
   const isStatusField = name === "status";
 
-  if (isStatusField && value === "Lost") {
+  if (isStatusField && opportunity.data[name] === value && value != "Won") {
+    return;
+  } else if (isStatusField && value === "Lost") {
     showLostReasonModal.value = true;
     return;
   }
@@ -948,6 +947,10 @@ function updateField(name, value, callback) {
     opportunity.data[name] = value;
     callback?.();
   });
+
+  if (isStatusField && value === "Won") {
+    showCreateProjectModal.value = true;
+  }
 }
 
 const projectResource = createResource({

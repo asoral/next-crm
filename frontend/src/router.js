@@ -133,6 +133,15 @@ const routes = [
   },
   
   {
+    alias: '/app',
+    path: '/app/:doc/:docname',
+    name: 'App',
+    redirect: (route) => {
+      window.location.href = window.location.origin + route.fullPath
+      return '/'
+    }
+  },
+  {
     path: '/:invalidpath',
     name: 'Invalid Page',
     component: () => import('@/pages/InvalidPage.vue'),
