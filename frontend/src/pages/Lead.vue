@@ -1078,9 +1078,9 @@ if (isStatusField && value === "Junk") {
       },
       limit: 1,
     });
-console.log('res', res)
+// console.log('res', res)
 const hasOpportunity = res.length > 0;
-      console.log('Opportunity check:', res, 'Has Opportunity:', hasOpportunity);
+      // console.log('Opportunity check:', res, 'Has Opportunity:', hasOpportunity);
 
       if (!hasOpportunity) {
         showLostReasonModal.value = true;

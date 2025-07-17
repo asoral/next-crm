@@ -354,7 +354,7 @@ async function render() {
           name: _todo.value.reference_name,
         })
         const doc = res.message
-        console.log('res', res)
+        // console.log('res', res)
 
         if (_todo.value.reference_type === 'Lead') {
           referenceTitle.value = doc.title || doc.lead_name || doc.name 

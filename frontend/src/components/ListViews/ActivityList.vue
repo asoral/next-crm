@@ -124,7 +124,10 @@ function openEventModal(event) {
       filters: JSON.stringify([['party_name', '=', props.customerId]]),
       limit_page_length: 1000
     }))
+    // console.log('oppRes', oppRes)
     const oppJson = await oppRes.json()
+    // console.log('oppRes', oppJson)
+
     const opportunityNames = (oppJson.data || []).map(o => o.name)
 
     if (!opportunityNames.length) {
@@ -142,8 +145,8 @@ function openEventModal(event) {
         opportunityNames.includes(participant.reference_docname)
       )
     )
-
     activities.value = filteredEvents
+    // console.log('filtered events', filteredEvents)
     props.count.value = filteredEvents.length
 
   } catch (err) {

@@ -184,7 +184,7 @@ const updateLostInfo = async () => {
   const isLead = !!props.lead
   const doc = props.opportunity?.data ?? props.lead?.data
 
-  console.log('doc', doc.name)
+  // console.log('doc', doc.name)
   if (!doc?.name) {
     console.error('No document name found for update')
     return
