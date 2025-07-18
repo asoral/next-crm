@@ -70,7 +70,7 @@
           </div>
         </div>
         <div class="flex items-center gap-1">
-          <Dropdown :options="todoStatusOptions(modalRef.updateToDoStatus, todo)" @click.stop>
+          <Dropdown :options="todoStatusOptions((status) => handleStatusChange(status, todo))" @click.stop>
             <Tooltip :text="__('Change Status')">
               <Button variant="ghosted" class="hover:bg-surface-gray-4">
                 <ToDoStatusIcon :status="todo.status" />
@@ -129,4 +129,32 @@ const props = defineProps({
 
 const { getUser } = usersStore()
 const { $dialog } = globalStore()
+async function handleStatusChange(status, todo) {
+  props.modalRef.updateToDoStatus(status, todo)
+
+  if (status === 'Closed') {
+    try {
+      const res = await fetch(`/api/resource/ToDo/${todo.name}`)
+      const fullToDo = await res.json()
+
+      props.modalRef.showToDo({
+  custom_title: '',
+  description: '',
+  allocated_to: fullToDo.data.allocated_to,
+  assigned_by: fullToDo.data.assigned_by,
+  date: '',
+  status: 'Open',
+  priority: fullToDo.data.priority || 'Medium',
+})
+
+    } catch (err) {
+      console.error('Failed to fetch full ToDo:', err)
+    }
+  }
+}
+
+
+
+
+
 </script>

@@ -47,7 +47,7 @@
           :label="__('Title')"
           v-model="_todo.custom_title"
           :placeholder="__('Call with John Doe')"
-          :error="!_todo.custom_title.trim() && showError"
+          :error="!_todo.custom_title && showError"
         />
         
         </div>
@@ -243,7 +243,7 @@ async function updateToDo() {
     _todo.value.allocated_to = getUser().name
   }
   _todo.value.assigned_by = getUser().name
-  if (!_todo.value.custom_title || !_todo.value.custom_title.trim()) {
+  if (!_todo.value.custom_title || !_todo.value.custom_title) {
   createToast({
     title: __(`Error ${editMode.value ? 'updating' : 'adding'} ToDo`),
     text: __('ToDo title is required.'),
@@ -253,7 +253,7 @@ async function updateToDo() {
   return
 }
 
-if (!_todo.value.description || !_todo.value.description.trim()) {
+if (!_todo.value.description || !_todo.value.description) {
   createToast({
     title: __(`Error ${editMode.value ? 'updating' : 'adding'} ToDo`),
     text: __('ToDo must have either a title or a description.'),
@@ -347,26 +347,27 @@ async function render() {
     }
 
     referenceTitle.value = ''
-    if (editMode.value && _todo.value.reference_type && _todo.value.reference_name) {
-      try {
-        const res = await call('frappe.client.get', {
-          doctype: _todo.value.reference_type,
-          name: _todo.value.reference_name,
-        })
-        const doc = res.message
-        // console.log('res', res)
 
-        if (_todo.value.reference_type === 'Lead') {
-          referenceTitle.value = doc.title || doc.lead_name || doc.name 
-        } else if (_todo.value.reference_type === 'Opportunity') {
-          referenceTitle.value = doc.customer_name || doc.opportunity_name || doc.name
-        } else {
-          referenceTitle.value = doc.name
-        }
-      } catch (err) {
-        console.warn('Error fetching reference title:', err)
-        referenceTitle.value = _todo.value.reference_name
-      }
+if (editMode.value && _todo.value.reference_type && _todo.value.reference_name) {
+  try {
+    const res = await call('frappe.client.get', {
+      doctype: _todo.value.reference_type,
+      name: _todo.value.reference_name,
+    })
+    const doc = res
+// console.log('doc', res)
+    const refType = (_todo.value.reference_type || '').toLowerCase()
+
+    if (refType === 'Lead' || refType === 'Opportunity') {
+      referenceTitle.value = doc.title || doc.name
+    } else {
+      referenceTitle.value = doc.title || doc.name
+    }
+  } catch (err) {
+    console.warn('Error fetching reference title:', err)
+    referenceTitle.value = _todo.value.reference_name
+  }
+
     }
   })
 }

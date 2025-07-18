@@ -35,7 +35,9 @@
           </div>
         </div>
         <div class="flex items-center gap-1">
-          <Dropdown :options="eventStatusOptions(modalRef.updateEventStatus, event)" @click.stop>
+          <Dropdown :options="eventStatusOptions((status) => handleStatusChange(status, event))"
+            @click.stop
+>
             <Tooltip :text="__('Change Status')">
               <Button variant="ghosted" class="hover:bg-surface-gray-4">
                 <EventStatusIcon :status="event.status" />
@@ -90,4 +92,22 @@ const props = defineProps({
 })
 
 const { $dialog } = globalStore()
+
+function handleStatusChange(status, event) {
+  props.modalRef.updateEventStatus(status, event)
+
+  if (['Closed', 'Completed'].includes(status)) {
+    props.modalRef.showEvent({
+      subject: '',
+      status: 'Open',
+      starts_on: '',
+      ends_on: '',
+      event_type: event.event_type || 'Private',
+      reference_type: event.reference_type,
+      reference_name: event.reference_name,
+      custom_from_time: '',
+      custom_to_time: '',
+    })
+  }
+}
 </script>
