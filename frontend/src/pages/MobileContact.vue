@@ -603,8 +603,12 @@ async function updateField(fieldname, value) {
 const columns = computed(() => opportunityColumns)
 
 function getOpportunityRowObject(opportunity) {
+  // console.log('opportunity', opportunity.title)
   return {
-    name: opportunity.name,
+    name: opportunity.name, 
+    title: opportunity.title, 
+
+    party_name: opportunity.party_name,
     customer: {
       label: opportunity.customer,
       logo: getCustomer(opportunity.customer)?.image,
@@ -613,6 +617,8 @@ function getOpportunityRowObject(opportunity) {
       opportunity.opportunity_amount,
       opportunity.currency,
     ),
+    probability: opportunity.probability + '%',
+    sales_stage: opportunity.sales_stage,
     status: {
       label: opportunity.status,
       color: getDealStatus(opportunity.status)?.iconColorClass,
@@ -620,8 +626,11 @@ function getOpportunityRowObject(opportunity) {
     email: opportunity.contact_email,
     mobile_no: opportunity.contact_mobile,
     opportunity_owner: {
-      label: opportunity.opportunity_owner && getUser(opportunity.opportunity_owner).full_name,
-      ...(opportunity.opportunity_owner && getUser(opportunity.opportunity_owner)),
+      label:
+        opportunity.opportunity_owner &&
+        getUser(opportunity.opportunity_owner).full_name,
+      ...(opportunity.opportunity_owner &&
+        getUser(opportunity.opportunity_owner)),
     },
     modified: {
       label: dateFormat(opportunity.modified, dateTooltipFormat),
@@ -631,15 +640,30 @@ function getOpportunityRowObject(opportunity) {
 }
 
 const opportunityColumns = [
+  // {
+  //   label: __('Opportunity'),
+  //   key: 'party_name',
+  //   width: '12rem',
+  // },
   {
-    label: __('Customer'),
-    key: 'customer',
-    width: '11rem',
+    label: __('Title'),
+    key: 'title',
+    width: '12rem',
   },
   {
-    label: __('Amount'),
-    key: 'opportunity_amount',
-    width: '9rem',
+    label: __('Opportunity Owner'),
+    key: 'opportunity_owner',
+    width: '12rem',
+  },
+  {
+    label: __('Probability'),
+    key: 'probability',
+    width: '8rem',
+  },
+  {
+    label: __('Last Modified'),
+    key: 'modified',
+    width: '10rem',
   },
   {
     label: __('Status'),
@@ -647,24 +671,10 @@ const opportunityColumns = [
     width: '10rem',
   },
   {
-    label: __('Email'),
-    key: 'contact_email',
-    width: '12rem',
-  },
-  {
-    label: __('Mobile no'),
-    key: 'contact_mobile',
-    width: '11rem',
-  },
-  {
-    label: __('Opportunity owner'),
-    key: 'opportunity_owner',
+    label: __('Sales Stage'),
+    key: 'sales_stage',
     width: '10rem',
   },
-  {
-    label: __('Last modified'),
-    key: 'modified',
-    width: '8rem',
-  },
 ]
+
 </script>

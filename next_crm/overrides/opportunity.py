@@ -338,8 +338,13 @@ def create_opportunity(args):
     opportunity.update(args)
 
     opportunity.insert()
+    
     if contact:
         link_contact_to_doc(contact, "Opportunity", opportunity.name)
+
+        if party_name:
+            frappe.db.set_value("Contact", contact, "company_name", party_name)
+
     set_opportunity_primary_contact(opportunity.name)
 
     return opportunity.name

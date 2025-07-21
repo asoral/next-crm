@@ -478,16 +478,23 @@ function getParsedFields(data) {
 const activityCount = ref(0)
 const tabIndex = ref(0)
 const tabs = [
+ 
   {
     name: 'Details',
     label: __('Details'),
     icon: DetailsIcon,
   },
+  
   {
     name: 'Opportunities',
     label: __('Opportunities'),
     icon: h(OpportunitiesIcon, { class: 'h-4 w-4' }),
     count: computed(() => opportunities.data?.length),
+  },
+  {
+    label: 'Activities',
+    icon: h(ActivityIcon, { class: 'h-4 w-4' }),
+    count: activityCount
   },
   {
     name: 'Contacts',
@@ -501,11 +508,8 @@ const tabs = [
     icon: h(AddressIcon, { class: 'h-4 w-4' }),
     count: computed(() => addresses.value.data?.length),
   },
-  {
-    label: 'Activities',
-    icon: h(ActivityIcon, { class: 'h-4 w-4' }),
-    count: activityCount
-  },
+  
+ 
 ]
 
 const opportunities = createListResource({
@@ -513,15 +517,7 @@ const opportunities = createListResource({
   doctype: 'Opportunity',
   cache: ['opportunities', props.customerId],
   fields: [
-    'name',
-    'customer',
-    'currency',
-    'opportunity_amount',
-    'status',
-    'contact_email',
-    'contact_mobile',
-    'opportunity_owner',
-    'modified',
+    '*',
   ],
   filters: {
     customer: props.customerId,
@@ -629,9 +625,12 @@ const columns = computed(() => {
     return addressColumns
 })
 
+
 function getOpportunityRowObject(opportunity) {
   return {
-    name: opportunity.name,
+    name: opportunity.name, 
+    title: opportunity.title,
+    party_name: opportunity.party_name, 
     customer: {
       label: opportunity.customer,
       logo: props.customer?.image,
@@ -640,6 +639,8 @@ function getOpportunityRowObject(opportunity) {
       opportunity.opportunity_amount,
       opportunity.currency,
     ),
+    probability: opportunity.probability + '%',
+    sales_stage: opportunity.sales_stage,
     status: {
       label: opportunity.status,
       color: getDealStatus(opportunity.status)?.iconColorClass,
@@ -693,10 +694,30 @@ function getAddressRowObject(address) {
 }
 
 const opportunityColumns = [
+  // {
+  //   label: __('Opportunity'),
+  //   key: 'party_name',
+  //   width: '12rem',
+  // },
   {
-    label: __('Amount'),
-    key: 'opportunity_amount',
-    width: '9rem',
+    label: __('Title'),
+    key: 'title',
+    width: '12rem',
+  },
+  {
+    label: __('Opportunity Owner'),
+    key: 'opportunity_owner',
+    width: '12rem',
+  },
+  {
+    label: __('Probability'),
+    key: 'probability',
+    width: '8rem',
+  },
+  {
+    label: __('Last Modified'),
+    key: 'modified',
+    width: '10rem',
   },
   {
     label: __('Status'),
@@ -704,24 +725,9 @@ const opportunityColumns = [
     width: '10rem',
   },
   {
-    label: __('Email'),
-    key: 'contact_email',
-    width: '12rem',
-  },
-  {
-    label: __('Mobile no'),
-    key: 'contact_mobile',
-    width: '11rem',
-  },
-  {
-    label: __('Opportunity owner'),
-    key: 'opportunity_owner',
+    label: __('Sales Stage'),
+    key: 'sales_stage',
     width: '10rem',
-  },
-  {
-    label: __('Last modified'),
-    key: 'modified',
-    width: '8rem',
   },
 ]
 

@@ -4,9 +4,9 @@
         {{ __('Loading activities...') }}
       </div>
   
-      <div v-else-if="activities.length === 0" class="text-center text-ink-gray-5">
+      <!-- <div v-else-if="activities.length === 0" class="text-center text-ink-gray-5">
         {{ __('No activities found for this customer.') }}
-      </div>
+      </div> -->
   
       <div v-else class="space-y-4">
         <div

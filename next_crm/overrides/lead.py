@@ -105,7 +105,7 @@ class Lead(Lead):
                 "salutation": self.salutation,
                 "gender": self.gender,
                 "designation": self.job_title,
-                "company_name": self.customer,
+                "company_name": self.company_name or self.customer,
                 "image": self.image or "",
             }
         )

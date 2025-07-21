@@ -163,7 +163,7 @@ async function fetchQuotations() {
     filters.push(['party_name', '=', props.leadId])
   }
 
-  console.log('Quotation Filters:', filters)
+  // console.log('Quotation Filters:', filters)
 
   const res = await call('frappe.client.get_list', {
     doctype: 'Quotation',
@@ -171,7 +171,7 @@ async function fetchQuotations() {
     filters,
     order_by: 'creation desc',
   })
-  console.log('All Quotations:', res)
+  // console.log('All Quotations:', res)
 
   quotations.value = res || []
   props.count.value = quotations.value.length
