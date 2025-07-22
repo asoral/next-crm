@@ -187,12 +187,14 @@
                           >
                             <div class="flex items-center gap-3 pb-1.5 pl-1 pt-4">
                               <Email2Icon class="h-4 w-4" />
-                              {{ contact.email }}
-                            </div>
+                              <a :href="`mailto:${contact.email}`" class="hover:underline text-blue-600">
+                                {{ contact.email }}
+                              </a>                              </div>
                             <div class="flex items-center gap-3 p-1 py-1.5">
                               <PhoneIcon class="h-4 w-4" />
-                              {{ contact.mobile_no }}
-                            </div>
+                              <a :href="`tel:${contact.mobile_no}`" class="hover:underline text-blue-600">
+                                {{ contact.mobile_no }}
+                              </a>                            </div>
                           </div>
                         </Section>
                       </div>

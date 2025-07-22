@@ -24,3 +24,33 @@ def get_all_events():
         )
 
     return events
+
+@frappe.whitelist()
+def update_sidebar_item(webpage, icon):
+	filters = {
+		"web_page": webpage,
+		"parenttype": "LMS Settings",
+		"parentfield": "sidebar_items",
+		"parent": "LMS Settings",
+	}
+
+	if frappe.db.exists("LMS Sidebar Item", filters):
+		frappe.db.set_value("LMS Sidebar Item", filters, "icon", icon)
+	else:
+		doc = frappe.new_doc("LMS Sidebar Item")
+		doc.update(filters)
+		doc.icon = icon
+		doc.insert()
+
+
+@frappe.whitelist()
+def delete_sidebar_item(webpage):
+	return frappe.db.delete(
+		"LMS Sidebar Item",
+		{
+			"web_page": webpage,
+			"parenttype": "LMS Settings",
+			"parentfield": "sidebar_items",
+			"parent": "LMS Settings",
+		},
+	)
