@@ -159,6 +159,7 @@ declare module 'vue' {
     OpportunityFromSetModal: typeof import('./src/components/Modals/OpportunityFromSetModal.vue')['default']
     OpportunityModal: typeof import('./src/components/Modals/OpportunityModal.vue')['default']
     OutboundCallIcon: typeof import('./src/components/Icons/OutboundCallIcon.vue')['default']
+    PageModal: typeof import('./src/components/Modals/PageModal.vue')['default']
     PauseIcon: typeof import('./src/components/Icons/PauseIcon.vue')['default']
     PhoneIcon: typeof import('./src/components/Icons/PhoneIcon.vue')['default']
     PinIcon: typeof import('./src/components/Icons/PinIcon.vue')['default']

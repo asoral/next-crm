@@ -3,6 +3,8 @@
     class="relative flex h-full flex-col justify-between transition-all duration-300 ease-in-out"
     :class="isSidebarCollapsed ? 'w-12' : 'w-[220px]'"
   >
+
+
     <div>
       <UserDropdown class="p-2" :isCollapsed="isSidebarCollapsed" />
     </div>
@@ -59,8 +61,63 @@
           </nav>
         </Section>
       </div>
+
+      <div>
+        <div
+          class="flex items-center justify-between pr-2 cursor-pointer"
+          :class="isSidebarCollapsed ? 'pl-3' : 'pl-4'"
+          @click="toggleWebPages"
+        >
+          <div
+            v-if="!isSidebarCollapsed"
+            class="flex items-center text-sm text-ink-gray-5 my-1"
+          >
+            <span class="grid h-5 w-6 flex-shrink-0 place-items-center">
+              <FeatherIcon
+                name="chevron-right"
+                class="h-4 w-4 stroke-1.5 text-ink-gray-9 transition-all duration-300 ease-in-out"
+                :class="{ 'rotate-90': !isWebpagesCollapsed }"
+              />
+            </span>
+            <span class="ml-2">
+              {{ __('More') }}
+            </span>
+          </div>
+          <Button
+            variant="ghost"
+            @click.stop="openPageModal()"
+          >
+            <template #icon>
+              <FeatherIcon name="plus" class="h-4 w-4 text-ink-gray-7 stroke-1.5" />
+            </template>
+          </Button>
+        </div>
+      
+        <div
+          v-if="moreLinks.length"
+          class="flex flex-col transition-all duration-300 ease-in-out"
+          :class="!isWebpagesCollapsed ? 'block' : 'hidden'"
+        >
+        <SidebarLink
+        v-for="link in moreLinks"
+        :key="link.label"
+        :icon="link.icon"
+        :label="__(link.label)"
+        :isCollapsed="isSidebarCollapsed"
+        class="mx-2 my-0.5"
+        @click="() => openWebpage(link)"
+      />
+      
+      
+      
+        </div>
+      </div>
+
     </div>
+   
     <div class="m-2 flex flex-col gap-1">
+      
+
       <SidebarLink
         :label="isSidebarCollapsed ? __('Expand') : __('Collapse')"
         :isCollapsed="isSidebarCollapsed"
@@ -77,7 +134,15 @@
         </template>
       </SidebarLink>
     </div>
+   
     <Notifications />
+    <PageModal
+    v-model="showPageModal"
+    :page="pageToEdit"
+    @added="handleWebPageAdded"
+  />
+  
+
   </div>
 </template>
 
@@ -101,15 +166,81 @@ import SidebarLink from '@/components/SidebarLink.vue'
 import Notifications from '@/components/Notifications.vue'
 import { viewsStore } from '@/stores/views'
 import { unreadNotificationsCount, notificationsStore } from '@/stores/notifications'
-import { FeatherIcon } from 'frappe-ui'
+import { FeatherIcon, Button } from 'frappe-ui'
 import { useStorage } from '@vueuse/core'
 import { computed, h } from 'vue'
 import CheckInIcon from '@/components/Icons/CheckIcon.vue' 
+import PageModal from '@/components/Modals/PageModal.vue' // adjust path if needed
+import { ref } from 'vue'
+import { useSidebar } from '@/stores/sidebar'
 
 const { getPinnedViews, getPublicViews } = viewsStore()
 const { toggle: toggleNotificationPanel } = notificationsStore()
 
 const isSidebarCollapsed = useStorage('isSidebarCollapsed', false)
+
+const showPageModal = ref(false)
+const pageToEdit = ref(null)
+const isWebpagesCollapsed = useStorage('isWebpagesCollapsed', false)
+
+const defaultLinks = [
+  
+]
+
+// Read from localStorage and merge with defaults
+const moreLinks = ref([...defaultLinks])
+
+const iconMap = {
+  FileTextIcon,
+  // Add more icon mappings if needed
+}
+
+// Load custom links from localStorage
+const storedLinks = JSON.parse(localStorage.getItem('customMoreLinks') || '[]')
+storedLinks.forEach((link) => {
+  moreLinks.value.push({
+    label: link.label,
+    icon: iconMap[link.icon] || FileTextIcon,
+    to: link.to,
+  })
+})
+
+
+function openWebpage(link) {
+  // link.to must be something like 'course-list'
+  window.open(`/${link.to}`, '_blank')
+}
+
+const toggleWebPages = () => {
+  isWebpagesCollapsed.value = !isWebpagesCollapsed.value
+  if (isWebpagesCollapsed.value) {
+    htmlPreview.value = ''
+    selectedWebPage.value = null
+  }
+}
+
+
+
+const openPageModal = (link = null) => {
+  pageToEdit.value = link
+  showPageModal.value = true
+}
+async function handleWebpageClick(link) {
+  selectedWebPage.value = link.label
+
+  try {
+    const res = await fetch(`/api/preview?webpage=${encodeURIComponent(link.label)}`)
+    const html = await res.text()
+    htmlPreview.value = html
+  } catch (error) {
+    console.error('Failed to fetch preview:', error)
+    htmlPreview.value = `<p class="text-red-500 p-2">Failed to load preview.</p>`
+  }
+}
+
+
+ 
+
 
 const links = [
   {
