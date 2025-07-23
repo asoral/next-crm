@@ -92,8 +92,8 @@
 				</div>
 				<div
 	class="flex flex-col transition-all duration-300 ease-in-out"
-	:class="!sidebarStore.isWebpagesCollapsed ? 'block' : 'hidden'"
->
+  :class="!sidebarStore.isWebpagesCollapsed ? 'block' : 'hidden'"
+  >
 <div
   v-for="link in crmWebPages"
   :key="link.web_page"
@@ -120,11 +120,12 @@
       </span>
     </div>
     <button
-      class="ml-2 p-1 text-gray-500 hover:text-gray-600"
-      @click.stop="deletePage(link)"
-    >
-      <FeatherIcon name="trash" class="h-4 w-4" />
-    </button>
+    class="ml-2 p-1 text-gray-500 hover:text-gray-600"
+    @click.stop="confirmDelete(link)"
+  >
+    <FeatherIcon name="trash" class="h-4 w-4" />
+  </button>
+  
   </div>
 </div>
 
@@ -234,10 +235,8 @@ const fetchWebPages = async () => {
 	}
 }
 
-// Fetch once on load
 fetchWebPages()
 
-// Also refetch when modal closes (see below)
 watch(showPageModal, (val) => {
 	if (!val) fetchWebPages()
 })
@@ -366,25 +365,35 @@ function getIcon(routeName, icon) {
       return PinIcon
   }
 }
-const deletePage = async (link) => {
-	try {
-		const response = await fetch(`/api/resource/CRM Web Page/${link.web_page}`, {
-			method: 'DELETE',
-			headers: {
-				'Content-Type': 'application/json',
-			},
-		})
 
-		if (response.ok) {
-			await fetchWebPages() // Refresh sidebar list
-		} else {
-			const error = await response.json()
-			console.error('Delete failed:', error)
-		}
-	} catch (err) {
-		console.error('Error deleting page:', err)
-	}
+const confirmDelete = async (link) => {
+  const confirmed = window.confirm(`Are you sure you want to delete "${link.label}"?`)
+  if (confirmed) {
+    await deletePage(link)
+  }
 }
+
+const deletePage = async (link) => {
+  try {
+    const response = await fetch(`/api/resource/CRM Web Page/${link.web_page}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+
+    if (response.ok) {
+      await fetchWebPages()
+    } else {
+      const error = await response.json()
+      console.error('Delete failed:', error)
+    }
+  } catch (err) {
+    console.error('Error deleting page:', err)
+  }
+}
+
+
 
 const openPageModal = (link) => {
 	showPageModal.value = true

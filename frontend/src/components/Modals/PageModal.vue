@@ -1,5 +1,6 @@
 <template>
 	<Dialog
+	id="dialog"
 		v-model="show"
 		class="text-base"
 		:options="{
@@ -78,12 +79,27 @@ const addWebPage = (close) => {
 				page.page_name = ''
 				page.icon = ''
 				page.html = ''
+				
 				sidebar.value?.reload?.()
+				window.location.reload()
+
 			},
 			onError(err) {
+				page.page_name = ''
+				page.icon = ''
+				page.html = ''
+				
+				sidebar.value?.reload?.()
+				window.location.reload()
 				close()
 			},
 		}
 	)
 }
 </script>
+
+<style>
+#dialog{
+	z-index: 100;
+}
+</style>
