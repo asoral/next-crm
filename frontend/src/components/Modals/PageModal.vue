@@ -1,8 +1,7 @@
 <template>
 	<Dialog
-	id="dialog"
 		v-model="show"
-		class="text-base"
+		class="text-base z-50"
 		:options="{
 			title: __('Add CRM Web Page'),
 			size: 'lg',
