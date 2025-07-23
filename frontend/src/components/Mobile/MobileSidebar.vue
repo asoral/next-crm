@@ -55,6 +55,7 @@
                 </nav>
               </Section>
             </div>
+
           </div>
         </div>
       </TransitionChild>
@@ -82,7 +83,6 @@ import UserDropdown from '@/components/UserDropdown.vue'
 import LeadsIcon from '@/components/Icons/LeadsIcon.vue'
 import OpportunitiesIcon from '@/components/Icons/OpportunitiesIcon.vue'
 import CheckInIcon from '@/components/Icons/CheckIcon.vue' 
-
 import ContactsIcon from '@/components/Icons/ContactsIcon.vue'
 import CustomersIcon from '@/components/Icons/CustomersIcon.vue'
 import ToDoIcon from '@/components/Icons/ToDoIcon.vue'

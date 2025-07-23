@@ -3,7 +3,7 @@
 		v-model="show"
 		class="text-base"
 		:options="{
-			title: __('Add web page to sidebar'),
+			title: __('Add CRM Web Page'),
 			size: 'lg',
 			actions: [
 				{
@@ -17,74 +17,73 @@
 		}"
 	>
 		<template #body-content>
-			<Link
-				v-model="page.webpage"
-				doctype="Web Page"
-				:label="__('Web Page')"
-				:filters="{
-					published: 1,
-				}"
+			<TextInput
+				v-model="page.page_name"
+				label="Page Name"
+				placeholder="Enter Page Name"
+				class="mt-2"
 			/>
-			<!-- <IconPicker v-model="page.icon" :label="__('Icon')" class="mt-4" /> -->
+			<IconPickerII v-model="page.icon" :label="__('Icon')" class="mt-2" />
+			<Textarea
+				v-model="page.html"
+				label="HTML Content"
+				placeholder="Paste HTML here"
+				:rows="6"
+				class="mt-2"
+			/>
 		</template>
 	</Dialog>
 </template>
+
 <script setup>
-import { Dialog, toast } from 'frappe-ui'
-import Link from '@/components/Controls/Link.vue'
-import IconPicker from '@/components/IconPicker.vue'
-import { reactive, watch } from 'vue'
+import { Dialog, TextInput, Textarea, createResource, toast } from 'frappe-ui'
+import IconPicker from '@/components/Controls/IconPickerII.vue'
+import { reactive, computed, ref } from 'vue'
 
 const show = defineModel()
+const sidebar = defineModel('reloadSidebar')
 
 const page = reactive({
+	page_name: '',
 	icon: '',
-	webpage: '',
+	main_section_html: '',
 })
 
-const props = defineProps({
-	page: {
-		type: Object,
-		default: null,
-	},
-})
+const reaction = ref(false) // needed for IconPicker
 
-watch(
-	() => props.page,
-	(newPage) => {
-		if (newPage) {
-			page.icon = newPage.icon
-			page.webpage = newPage.web_page
-		}
-	},
-	{ immediate: true }
+// Only send icon name string
+const iconName = computed(() =>
+	typeof page.icon === 'object' && page.icon.name ? page.icon.name : page.icon
 )
 
+const webPage = createResource({
+	url: '/api/resource/CRM Web Page',
+	method: 'POST',
+	makeParams() {
+		return {
+			page_name: page.page_name,
+			icon: iconName.value,
+			main_section_html: page.html,
+		}
+	},
+})
+
 const addWebPage = (close) => {
-	if (!page.webpage) {
-		toast.error('Please select a Web Page')
-		return
-	}
-
-	// Get current stored links
-	const stored = JSON.parse(localStorage.getItem('customMoreLinks') || '[]')
-
-	// Add new entry
-	stored.push({
-		label: page.webpage,
-		icon: page.icon || 'FileTextIcon',
-		to: page.webpage,
-	})
-
-	localStorage.setItem('customMoreLinks', JSON.stringify(stored))
-	close()
-
-	// Optional: reload the page to reflect instantly
-	window.location.reload()
+	webPage.submit(
+		{},
+		{
+			onSuccess() {
+				toast.success(__('CRM Web Page created'))
+				close()
+				page.page_name = ''
+				page.icon = ''
+				page.html = ''
+				sidebar.value?.reload?.()
+			},
+			onError(err) {
+				close()
+			},
+		}
+	)
 }
-
-
 </script>
-
-
-

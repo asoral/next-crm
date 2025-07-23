@@ -3,8 +3,6 @@
     class="relative flex h-full flex-col justify-between transition-all duration-300 ease-in-out"
     :class="isSidebarCollapsed ? 'w-12' : 'w-[220px]'"
   >
-
-
     <div>
       <UserDropdown class="p-2" :isCollapsed="isSidebarCollapsed" />
     </div>
@@ -61,63 +59,79 @@
           </nav>
         </Section>
       </div>
-
-      <div>
-        <div
-          class="flex items-center justify-between pr-2 cursor-pointer"
-          :class="isSidebarCollapsed ? 'pl-3' : 'pl-4'"
-          @click="toggleWebPages"
-        >
-          <div
-            v-if="!isSidebarCollapsed"
-            class="flex items-center text-sm text-ink-gray-5 my-1"
-          >
-            <span class="grid h-5 w-6 flex-shrink-0 place-items-center">
-              <FeatherIcon
-                name="chevron-right"
-                class="h-4 w-4 stroke-1.5 text-ink-gray-9 transition-all duration-300 ease-in-out"
-                :class="{ 'rotate-90': !isWebpagesCollapsed }"
-              />
-            </span>
-            <span class="ml-2">
-              {{ __('More') }}
-            </span>
-          </div>
-          <Button
-            variant="ghost"
-            @click.stop="openPageModal()"
-          >
-            <template #icon>
-              <FeatherIcon name="plus" class="h-4 w-4 text-ink-gray-7 stroke-1.5" />
-            </template>
-          </Button>
-        </div>
-      
-        <div
-          v-if="moreLinks.length"
-          class="flex flex-col transition-all duration-300 ease-in-out"
-          :class="!isWebpagesCollapsed ? 'block' : 'hidden'"
-        >
-        <SidebarLink
-        v-for="link in moreLinks"
-        :key="link.label"
-        :icon="link.icon"
-        :label="__(link.label)"
-        :isCollapsed="isSidebarCollapsed"
-        class="mx-2 my-0.5"
-        @click="() => openWebpage(link)"
-      />
-      
-      
-      
-        </div>
-      </div>
-
+      <div
+				class="mt-4"
+			>
+				<div
+					class="flex items-center justify-between pr-2 cursor-pointer"
+					:class="sidebarStore.isSidebarCollapsed ? 'pl-3' : 'pl-4'"
+					@click="toggleWebPages"
+				>
+					<div
+						v-if="!sidebarStore.isSidebarCollapsed"
+						class="flex items-center text-sm text-ink-gray-5 my-1"
+					>
+						<span class="grid h-5 w-6 flex-shrink-0 place-items-center">
+							<FeatherIcon name="chevron-right"
+								class="h-4 w-4 stroke-1.5 text-ink-gray-9 transition-all duration-300 ease-in-out"
+								:class="{ 'rotate-90': !sidebarStore.isWebpagesCollapsed }"
+							/>
+						</span>
+						<span class="ml-2 text-lg">
+							{{ __('More') }}
+						</span>
+					</div>
+					<Button
+						variant="ghost"
+						@click="openPageModal()"
+					>
+						
+							<FeatherIcon name="plus" class="h-4 w-4 text-ink-gray-7 stroke-1.5" />
+						
+					</Button>
+				</div>
+				<div
+	class="flex flex-col transition-all duration-300 ease-in-out"
+	:class="!sidebarStore.isWebpagesCollapsed ? 'block' : 'hidden'"
+>
+<div
+  v-for="link in crmWebPages"
+  :key="link.web_page"
+  class="mx-2 my-0.5 flex h-7 cursor-pointer items-center rounded text-ink-gray-7 duration-300 ease-in-out hover:bg-surface-gray-2 focus:outline-none focus-visible:rounded focus-visible:ring-2 focus-visible:ring-gray-400"
+  :class="isSidebarCollapsed ? 'pl-[3px] p-1' : 'px-2 py-1'"
+>
+  <div
+    class="flex w-full items-center justify-between"
+    @click="navigateToCRMPage(link)"
+  >
+    <div class="flex items-center truncate">
+      <span class="grid flex-shrink-0 place-items-center">
+        <component
+          :is="LucideIcons[link.icon] || LucideIcons.Folder"
+          class="size-4 text-ink-gray-7"
+        />
+      </span>
+      <span
+        class="ml-2 text-sm truncate"
+        :class="isSidebarCollapsed ? 'opacity-0 w-0 ml-0' : 'opacity-100 w-auto'"
+      >
+        {{ link.label }}
+      </span>
     </div>
-   
-    <div class="m-2 flex flex-col gap-1">
-      
+    <button
+      class="ml-2 p-1 text-gray-500 hover:text-gray-600"
+      @click.stop="deletePage(link)"
+    >
+      <FeatherIcon name="trash" class="h-4 w-4" />
+    </button>
+  </div>
+</div>
 
+</div>
+
+			</div>
+    </div>
+    <div class="m-2 flex flex-col gap-1">
       <SidebarLink
         :label="isSidebarCollapsed ? __('Expand') : __('Collapse')"
         :isCollapsed="isSidebarCollapsed"
@@ -134,15 +148,13 @@
         </template>
       </SidebarLink>
     </div>
-   
-    <Notifications />
     <PageModal
-    v-model="showPageModal"
-    :page="pageToEdit"
-    @added="handleWebPageAdded"
-  />
-  
+	v-model="showPageModal"
+	:page="pageToEdit"
+	:reloadSidebar="{ reload: fetchWebPages }"
+/>
 
+    <Notifications />
   </div>
 </template>
 
@@ -166,80 +178,68 @@ import SidebarLink from '@/components/SidebarLink.vue'
 import Notifications from '@/components/Notifications.vue'
 import { viewsStore } from '@/stores/views'
 import { unreadNotificationsCount, notificationsStore } from '@/stores/notifications'
-import { FeatherIcon, Button } from 'frappe-ui'
+import { FeatherIcon } from 'frappe-ui'
 import { useStorage } from '@vueuse/core'
-import { computed, h } from 'vue'
+import { computed, h, ref, watch } from 'vue'
 import CheckInIcon from '@/components/Icons/CheckIcon.vue' 
-import PageModal from '@/components/Modals/PageModal.vue' // adjust path if needed
-import { ref } from 'vue'
+// import { getSidebarLinks } from '@/utils'
+// import { usersStore } from '@/stores/user'
+import { sessionStore } from '@/stores/session'
 import { useSidebar } from '@/stores/sidebar'
+import { useSettings } from '@/stores/settings'
+import { Button, createResource, Tooltip } from 'frappe-ui'
+import PageModal from '@/components/Modals/PageModal.vue'
+import { useRouter } from 'vue-router'
+import * as LucideIcons from 'lucide-vue-next'
 
+const router = useRouter()
+
+const navigateToCRMPage = (link) => {
+  router.push({
+    name: 'CRMWebPage',
+    params: {
+      webPageName: link.web_page,
+    },
+  })
+}
 const { getPinnedViews, getPublicViews } = viewsStore()
 const { toggle: toggleNotificationPanel } = notificationsStore()
 
 const isSidebarCollapsed = useStorage('isSidebarCollapsed', false)
+const { user } = sessionStore()
+let sidebarStore = useSidebar()
 
 const showPageModal = ref(false)
+const isModerator = ref(false)
+const isInstructor = ref(false)
 const pageToEdit = ref(null)
-const isWebpagesCollapsed = useStorage('isWebpagesCollapsed', false)
+const settingsStore = useSettings()
+const { sidebarSettings } = settingsStore
+console.log('sidebarSettings', sidebarSettings)
 
-const defaultLinks = [
-  
-]
+const readOnlyMode = window.read_only_mode
+const crmWebPages = ref([])
 
-// Read from localStorage and merge with defaults
-const moreLinks = ref([...defaultLinks])
+const fetchWebPages = async () => {
+	const response = await fetch('/api/resource/CRM Web Page?fields=["name","page_name","icon"]')
+	const data = await response.json()
+	if (data.data) {
+		crmWebPages.value = data.data.map((page) => ({
+	label: page.page_name,
+	icon: page.icon || PinIcon, 
+	web_page: page.name,
+}))
 
-const iconMap = {
-  FileTextIcon,
-  // Add more icon mappings if needed
+	}
 }
 
-// Load custom links from localStorage
-const storedLinks = JSON.parse(localStorage.getItem('customMoreLinks') || '[]')
-storedLinks.forEach((link) => {
-  moreLinks.value.push({
-    label: link.label,
-    icon: iconMap[link.icon] || FileTextIcon,
-    to: link.to,
-  })
+// Fetch once on load
+fetchWebPages()
+
+// Also refetch when modal closes (see below)
+watch(showPageModal, (val) => {
+	if (!val) fetchWebPages()
 })
-
-
-function openWebpage(link) {
-  // link.to must be something like 'course-list'
-  window.open(`/${link.to}`, '_blank')
-}
-
-const toggleWebPages = () => {
-  isWebpagesCollapsed.value = !isWebpagesCollapsed.value
-  if (isWebpagesCollapsed.value) {
-    htmlPreview.value = ''
-    selectedWebPage.value = null
-  }
-}
-
-
-
-const openPageModal = (link = null) => {
-  pageToEdit.value = link
-  showPageModal.value = true
-}
-async function handleWebpageClick(link) {
-  selectedWebPage.value = link.label
-
-  try {
-    const res = await fetch(`/api/preview?webpage=${encodeURIComponent(link.label)}`)
-    const html = await res.text()
-    htmlPreview.value = html
-  } catch (error) {
-    console.error('Failed to fetch preview:', error)
-    htmlPreview.value = `<p class="text-red-500 p-2">Failed to load preview.</p>`
-  }
-}
-
-
- 
 
 
 const links = [
@@ -364,5 +364,45 @@ function getIcon(routeName, icon) {
     default:
       return PinIcon
   }
+}
+const deletePage = async (link) => {
+	try {
+		const response = await fetch(`/api/resource/CRM Web Page/${link.web_page}`, {
+			method: 'DELETE',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+		})
+
+		if (response.ok) {
+			await fetchWebPages() // Refresh sidebar list
+		} else {
+			const error = await response.json()
+			console.error('Delete failed:', error)
+		}
+	} catch (err) {
+		console.error('Error deleting page:', err)
+	}
+}
+
+const openPageModal = (link) => {
+	showPageModal.value = true
+	pageToEdit.value = link
+}
+
+const toggleSidebar = () => {
+	sidebarStore.isSidebarCollapsed = !sidebarStore.isSidebarCollapsed
+	localStorage.setItem(
+		'isSidebarCollapsed',
+		JSON.stringify(sidebarStore.isSidebarCollapsed)
+	)
+}
+
+const toggleWebPages = () => {
+	sidebarStore.isWebpagesCollapsed = !sidebarStore.isWebpagesCollapsed
+	localStorage.setItem(
+		'isWebpagesCollapsed',
+		JSON.stringify(sidebarStore.isWebpagesCollapsed)
+	)
 }
 </script>

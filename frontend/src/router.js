@@ -53,6 +53,13 @@ const routes = [
     meta: { scrollPos: { top: 0, left: 0 } },
   },
   {
+    path: '/crm-web-page/:webPageName',
+    name: 'CRMWebPage',
+    component: () => import('@/components/CRMWebPage.vue'),
+    props: true,
+  }
+,  
+  {
     path: '/contacts/:contactId',
     name: 'Contact',
     component: () => import(`@/pages/${handleMobileView('Contact')}.vue`),
