@@ -107,9 +107,10 @@
     <div class="flex items-center truncate">
       <span class="grid flex-shrink-0 place-items-center">
         <component
-          :is="LucideIcons[link.icon] || LucideIcons.Folder"
-          class="size-4 text-ink-gray-7"
-        />
+  :is="icons[link.icon]"
+  class="size-4 text-ink-gray-7"
+/>
+
       </span>
       <span
         class="ml-2 text-sm truncate"
@@ -190,7 +191,7 @@ import { useSettings } from '@/stores/settings'
 import { Button, createResource, Tooltip } from 'frappe-ui'
 import PageModal from '@/components/Modals/PageModal.vue'
 import { useRouter } from 'vue-router'
-import * as LucideIcons from 'lucide-vue-next'
+import * as icons from 'lucide-vue-next'
 
 const router = useRouter()
 
