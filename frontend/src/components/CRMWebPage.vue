@@ -1,15 +1,12 @@
 <template>
-  <div class="p-4 space-y-4">
-    <!-- <h1 class="text-xl font-bold">
-      CRM Web Page: {{ pageData?.page_name || webPageName }}
-    </h1> -->
-
+  <div class="min-h-screen p-4 space-y-4 ">
     <div v-if="pageData">
       <div
         v-html="pageData.main_section_html"
-        class="p-4  bg-white w-full h-auto"
+        class="p-4  w-full min-h-screen"
       />
     </div>
+
 
     <div v-else>
       Loading...
@@ -31,3 +28,10 @@ onMounted(async () => {
   pageData.value = data.data
 })
 </script>
+<style>
+html,
+body,
+#app {
+  height: 100%;
+}
+</style>
