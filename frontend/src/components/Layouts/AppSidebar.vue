@@ -61,11 +61,11 @@
       </div>
       <div
 				class="mt-4"
+        v-if="!isSidebarCollapsed"
 			>
 				<div
-					class="flex items-center justify-between pr-2 cursor-pointer"
-					:class="sidebarStore.isSidebarCollapsed ? 'pl-3' : 'pl-4'"
-					@click="toggleWebPages"
+        class="flex w-full items-center justify-between duration-300 ease-in-out px-2 py-1"
+        @click="toggleWebPages"
 				>
 					<div
 						v-if="!sidebarStore.isSidebarCollapsed"
