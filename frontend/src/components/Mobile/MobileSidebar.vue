@@ -60,17 +60,17 @@
           >
             <div
               class="flex items-center justify-between pr-2 cursor-pointer"
-              :class="sidebarStore.isSidebarCollapsed ? 'pl-3' : 'pl-4'"
               @click="toggleWebPages"
             >
               <div
-                v-if="!sidebarStore.isSidebarCollapsed"
                 class="flex items-center text-sm text-ink-gray-5 my-1"
               >
-                <span class="grid h-5 w-6 flex-shrink-0 place-items-center">
+                <span class="grid h-5 w-6 flex-shrink-0 place-items-center"
+                >
                   <FeatherIcon name="chevron-right"
                     class="h-4 w-4 stroke-1.5 text-ink-gray-9 transition-all duration-300 ease-in-out"
                     :class="{ 'rotate-90': !sidebarStore.isWebpagesCollapsed }"
+
                   />
                 </span>
                 <span class="ml-2 text-lg">
@@ -88,13 +88,13 @@
             </div>
             <div
       class="flex flex-col transition-all duration-300 ease-in-out"
-      :class="!sidebarStore.isWebpagesCollapsed ? 'block' : 'hidden'"
+      v-show="!sidebarStore.isWebpagesCollapsed"
+
     >
     <div
       v-for="link in crmWebPages"
       :key="link.web_page"
       class="mx-2 my-0.5 flex h-7 cursor-pointer items-center rounded text-ink-gray-7 duration-300 ease-in-out hover:bg-surface-gray-2 focus:outline-none focus-visible:rounded focus-visible:ring-2 focus-visible:ring-gray-400"
-      :class="isSidebarCollapsed ? 'pl-[3px] p-1' : 'px-2 py-1'"
     >
       <div
         class="flex w-full items-center justify-between"
@@ -110,7 +110,6 @@
           </span>
           <span
             class="ml-2 text-sm truncate"
-            :class="isSidebarCollapsed ? 'opacity-0 w-0 ml-0' : 'opacity-100 w-auto'"
           >
             {{ link.label }}
           </span>
@@ -203,6 +202,10 @@ const navigateToCRMPage = (link) => {
 const isSidebarCollapsed = useStorage('isSidebarCollapsed', false)
 const { user } = sessionStore()
 let sidebarStore = useSidebar()
+if (sidebarStore.isWebpagesCollapsed === undefined) {
+  sidebarStore.isWebpagesCollapsed = false
+}
+
 
 const showPageModal = ref(false)
 const isModerator = ref(false)
@@ -218,6 +221,7 @@ const crmWebPages = ref([])
 const fetchWebPages = async () => {
 	const response = await fetch('/api/resource/CRM Web Page?fields=["name","page_name","icon"]')
 	const data = await response.json()
+  
 	if (data.data) {
 		crmWebPages.value = data.data.map((page) => ({
 	label: page.page_name,
