@@ -1073,24 +1073,22 @@ const fieldsLayout = createResource({
 async function updateField(name, value, callback) {
   const isStatusField = name === "status";
 
-if (isStatusField && lead.data[name] === value) {
-  return;
-}
+  if (isStatusField && lead.data[name] === value) {
+    return;
+  }
 
-if (isStatusField && value === "Junk") {
-  try {
-    const res = await call('frappe.client.get_list', {
-      doctype: 'Opportunity',
-      filters: {
-        party_name: lead.data.name,
-        opportunity_from: 'Lead'
-      },
-      limit: 1,
-    });
-// console.log('res', res)
-const hasOpportunity = res.length > 0;
-      // console.log('Opportunity check:', res, 'Has Opportunity:', hasOpportunity);
+  if (isStatusField && value === "Junk") {
+    try {
+      const res = await call('frappe.client.get_list', {
+        doctype: 'Opportunity',
+        filters: {
+          party_name: lead.data.name,
+          opportunity_from: 'Lead'
+        },
+        limit: 1,
+      });
 
+      const hasOpportunity = res.length > 0;
       if (!hasOpportunity) {
         showLostReasonModal.value = true;
         return;
@@ -1099,11 +1097,30 @@ const hasOpportunity = res.length > 0;
       console.error('Error checking opportunity:', err);
     }
   }
+
+  if (isStatusField && value === "Qualified") {
+    try {
+      const user = await call("frappe.auth.get_logged_user");
+      const today = new Date().toISOString().split("T")[0]; 
+
+      await call("frappe.client.set_value", {
+        doctype: "Lead",
+        name: lead.data.name,
+        fieldname: {
+          qualified_by: user,
+          qualified_on: today,
+        },
+      });
+    } catch (err) {
+      console.error("Failed to update qualified_by and qualified_on:", err);
+    }
+  }
   updateLead(name, value, () => {
-    lead.data[name] = value
-    callback?.()
-  })
+    lead.data[name] = value;
+    callback?.();
+  });
 }
+
 
 async function deleteLead() {
   showDeleteModal.value = true;

@@ -61,23 +61,23 @@
       </div>
       <div
 				class="mt-4"
-        v-if="!isSidebarCollapsed"
 			>
 				<div
         class="flex w-full items-center justify-between duration-300 ease-in-out px-2 py-1"
         @click="toggleWebPages"
 				>
 					<div
-						v-if="!sidebarStore.isSidebarCollapsed"
 						class="flex items-center text-sm text-ink-gray-5 my-1"
 					>
-						<span class="grid h-5 w-6 flex-shrink-0 place-items-center">
+						<span class="grid h-5 w-6 flex-shrink-0 place-items-center"       v-if="!isSidebarCollapsed"
+            >
 							<FeatherIcon name="chevron-right"
 								class="h-4 w-4 stroke-1.5 text-ink-gray-9 transition-all duration-300 ease-in-out"
 								:class="{ 'rotate-90': !sidebarStore.isWebpagesCollapsed }"
 							/>
 						</span>
-						<span class="ml-2 text-lg">
+						<span  v-if="!isSidebarCollapsed"
+            class="ml-2 text-lg">
 							{{ __('More') }}
 						</span>
 					</div>
@@ -92,20 +92,20 @@
 				</div>
 				<div
 	class="flex flex-col transition-all duration-300 ease-in-out"
-  :class="!sidebarStore.isWebpagesCollapsed ? 'block' : 'hidden'"
   >
 <div
   v-for="link in crmWebPages"
   :key="link.web_page"
   class="mx-2 my-0.5 flex h-7 cursor-pointer items-center rounded text-ink-gray-7 duration-300 ease-in-out hover:bg-surface-gray-2 focus:outline-none focus-visible:rounded focus-visible:ring-2 focus-visible:ring-gray-400"
-  :class="isSidebarCollapsed ? 'pl-[3px] p-1' : 'px-2 py-1'"
 >
   <div
     class="flex w-full items-center justify-between"
     @click="navigateToCRMPage(link)"
   >
     <div class="flex items-center truncate">
-      <span class="grid flex-shrink-0 place-items-center">
+      <span class="grid flex-shrink-0 place-items-center"
+      :class="isSidebarCollapsed ? 'ml-2' : ''"
+      >
         <component
   :is="icons[link.icon]"
   class="size-4 text-ink-gray-7"
@@ -120,6 +120,8 @@
       </span>
     </div>
     <button
+    v-if="!isSidebarCollapsed"
+
     class="ml-2 p-1 text-gray-500 hover:text-gray-600"
     @click.stop="confirmDelete(link)"
   >
