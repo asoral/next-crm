@@ -32,7 +32,8 @@
                 </div>
                 <Button class="flex" variant="ghost" icon="x" @click="removeFilter(i)" />
               </div>
-              <div id="fieldname" class="w-full">
+            
+              <div id="fieldname" class="w-full min-w-[140px]">
                 <Autocomplete
                   :value="f.field.fieldname"
                   :options="filterableFields.data"
@@ -40,7 +41,8 @@
                   :placeholder="__('First Name')"
                 />
               </div>
-              <div id="operator">
+            
+              <div id="operator" class="w-full min-w-[140px]">
                 <FormControl
                   type="select"
                   v-model="f.operator"
@@ -49,15 +51,17 @@
                   :placeholder="__('Equals')"
                 />
               </div>
-              <div id="value" class="w-full">
+            
+              <div id="value" class="w-full min-w-[140px]">
                 <component
                   :is="getValueControl(f)"
                   v-model="f.value"
-                  @change.stop="(v) => updateValue(v, f)"
+                  @change="(v) => updateValue(v, f)"
                   :placeholder="__('John Doe')"
                 />
               </div>
             </div>
+            
             <div v-else class="flex items-center justify-between gap-2">
               <div class="flex items-center gap-2">
                 <div class="w-13 pl-2 text-end text-base text-ink-gray-5">
