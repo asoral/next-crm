@@ -99,7 +99,7 @@
   class="mx-2 my-0.5 flex h-7 cursor-pointer items-center rounded text-ink-gray-7 duration-300 ease-in-out hover:bg-surface-gray-2 focus:outline-none focus-visible:rounded focus-visible:ring-2 focus-visible:ring-gray-400"
 >
   <div
-    class="flex w-full items-center justify-between"
+    class="flex w-full items-center justify-between duration-300 ease-in-out px-2 py-1"
     @click="navigateToCRMPage(link)"
   >
     <div class="flex items-center truncate">

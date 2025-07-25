@@ -59,8 +59,8 @@
             class="mt-4"
           >
             <div
-              class="flex items-center justify-between pr-2 cursor-pointer"
-              @click="toggleWebPages"
+            class="flex w-full items-center justify-between duration-300 ease-in-out px-2 py-1"
+            @click="toggleWebPages"
             >
               <div
                 class="flex items-center text-sm text-ink-gray-5 my-1"
@@ -97,8 +97,8 @@
       class="mx-2 my-0.5 flex h-7 cursor-pointer items-center rounded text-ink-gray-7 duration-300 ease-in-out hover:bg-surface-gray-2 focus:outline-none focus-visible:rounded focus-visible:ring-2 focus-visible:ring-gray-400"
     >
       <div
-        class="flex w-full items-center justify-between"
-        @click="navigateToCRMPage(link)"
+      class="flex w-full items-center justify-between duration-300 ease-in-out px-2 py-1"
+      @click="navigateToCRMPage(link)"
       >
         <div class="flex items-center truncate">
           <span class="grid flex-shrink-0 place-items-center">
