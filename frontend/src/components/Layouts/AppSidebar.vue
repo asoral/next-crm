@@ -104,7 +104,6 @@
   >
     <div class="flex items-center truncate">
       <span class="grid flex-shrink-0 place-items-center"
-      :class="isSidebarCollapsed ? 'ml-2' : ''"
       >
         <component
   :is="icons[link.icon]"
