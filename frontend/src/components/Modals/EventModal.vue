@@ -52,7 +52,7 @@
               </template>
             </Button>
           </Dropdown>
-          <Link
+          <!-- <Link
             class="form-control"
             :value="getUser(_event._assign).full_name"
             doctype="User"
@@ -73,7 +73,7 @@
                 </div>
               </Tooltip>
             </template>
-          </Link>
+          </Link> -->
           <FormControl
             v-model="_event.event_type"
             type="select"
