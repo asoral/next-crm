@@ -31,7 +31,27 @@
 				:rows="6"
 				class="mt-2"
 			/>
-		</template>
+				<div class="mt-2 w-full">
+				  <label class="text-sm font-medium text-gray-500">For Your Help</label>
+			  
+				  <div
+					class="mt-1 w-full whitespace-pre-wrap rounded-md border border-gray-300 bg-gray-100 p-2 font-mono text-sm text-gray-800 shadow-sm"
+					style="min-height: 150px;"
+				  >
+			  &lt;div style="display: flex; flex-direction: column; width: 100%; height: 100%;"&gt;<br />
+			  &nbsp;&nbsp;&lt;iframe <br />
+			  &nbsp;&nbsp;&nbsp;&nbsp;src="Paste Your Url Here"<br />
+			  &nbsp;&nbsp;&nbsp;&nbsp;style="flex: 1; width: 100%; border: none; height: 300px;"<br />
+			  &nbsp;&nbsp;&nbsp;&nbsp;allowfullscreen<br />
+			  &nbsp;&nbsp;&nbsp;&nbsp;loading="lazy"<br />
+			  &nbsp;&nbsp;&gt;&lt;/iframe&gt;<br />
+			  &lt;/div&gt;
+				  </div>
+				</div>
+			  
+			  
+</template>
+
 	</Dialog>
 </template>
 
