@@ -261,6 +261,8 @@ import Email2Icon from '@/components/Icons/Email2Icon.vue'
 import CommentIcon from '@/components/Icons/CommentIcon.vue'
 import PhoneIcon from '@/components/Icons/PhoneIcon.vue'
 import ToDoIcon from '@/components/Icons/ToDoIcon.vue'
+import EventIcon from '@/components/Icons/EventIcon.vue'
+
 import NoteIcon from '@/components/Icons/NoteIcon.vue'
 import AttachmentIcon from '@/components/Icons/AttachmentIcon.vue'
 import WhatsAppIcon from '@/components/Icons/WhatsAppIcon.vue'
@@ -438,7 +440,7 @@ const breadcrumbs = computed(() => {
   }
 
   items.push({
-    label: customer.data?.name || opportunity.data?.party_name || __('Untitled'),
+    label: opportunity.data?.title || customer.data?.name || opportunity.data?.party_name || __('Untitled'),
     route: { name: 'Opportunity', params: { opportunityId: opportunity.data.name } },
   })
   return items
@@ -500,10 +502,11 @@ const tabs = computed(() => {
       label: __('ToDos'),
       icon: ToDoIcon,
     },
+   
     {
-      name: 'Notes',
-      label: __('Notes'),
-      icon: NoteIcon,
+      name: 'Events',
+      label: __('Events'),
+      icon: EventIcon,
     },
     {
       name: 'Attachments',
