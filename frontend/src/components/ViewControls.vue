@@ -4,13 +4,8 @@
       <div class="flex items-center justify-between gap-2 overflow-x-auto">
         <div class="flex gap-2">
           <Filter v-model="list" :doctype="doctype" :default_filters="filters" @update="updateFilter" />
-          <GroupBy
-            v-if="route.params.viewType === 'group_by'"
-            v-model="list"
-            :doctype="doctype"
-            :hideLabel="isMobileView"
-            @update="updateGroupBy"
-          />
+          <GroupBy v-if="route.params.viewType === 'group_by'" v-model="list" :doctype="doctype"
+            :hideLabel="isMobileView" @update="updateGroupBy" />
         </div>
 
         <div class="flex gap-2">
@@ -19,32 +14,16 @@
               <RefreshIcon class="h-4 w-4" />
             </template>
           </Button>
-          <SortBy
-            v-if="route.params.viewType !== 'kanban'"
-            v-model="list"
-            :doctype="doctype"
-            @update="updateSort"
-            :hideLabel="isMobileView"
-          />
-          <KanbanSettings
-            v-if="route.params.viewType === 'kanban'"
-            v-model="list"
-            :doctype="doctype"
-            @update="updateKanbanSettings"
-          />
-          <ColumnSettings
-            v-else-if="!options.hideColumnsButton"
-            v-model="list"
-            :doctype="doctype"
-            :hideLabel="isMobileView"
-            @update="(isDefault) => updateColumns(isDefault)"
-          />
+          <SortBy v-if="route.params.viewType !== 'kanban'" v-model="list" :doctype="doctype" @update="updateSort"
+            :hideLabel="isMobileView" />
+          <KanbanSettings v-if="route.params.viewType === 'kanban'" v-model="list" :doctype="doctype"
+            @update="updateKanbanSettings" />
+          <ColumnSettings v-else-if="!options.hideColumnsButton" v-model="list" :doctype="doctype"
+            :hideLabel="isMobileView" @update="(isDefault) => updateColumns(isDefault)" />
         </div>
       </div>
-      <div
-        v-if="viewUpdated && route.query.view && (!view.public || isManager())"
-        class="flex flex-row-reverse items-center gap-2 border-r pr-2"
-      >
+      <div v-if="viewUpdated && route.query.view && (!view.public || isManager())"
+        class="flex flex-row-reverse items-center gap-2 border-r pr-2">
         <Button :label="__('Cancel')" @click="cancelChanges" />
         <Button :label="__('Save Changes')" @click="saveView" />
       </div>
@@ -62,11 +41,8 @@
                 </Tooltip>
               </template>
               <template #suffix>
-                <FeatherIcon
-                  class="h-3.5 cursor-pointer group-hover:flex hidden"
-                  name="x"
-                  @click.stop="removeQuickFilter(filter)"
-                />
+                <FeatherIcon class="h-3.5 cursor-pointer group-hover:flex hidden" name="x"
+                  @click.stop="removeQuickFilter(filter)" />
               </template>
             </Button>
           </template>
@@ -107,10 +83,8 @@
     </FadedScrollableDiv>
     <div class="-ml-2 h-[70%] border-l" />
     <div class="flex items-center gap-2">
-      <div
-        v-if="viewUpdated && route.query.view && (!view.public || isManager())"
-        class="flex items-center gap-2 border-r pr-2"
-      >
+      <div v-if="viewUpdated && route.query.view && (!view.public || isManager())"
+        class="flex items-center gap-2 border-r pr-2">
         <Button :label="__('Cancel')" @click="cancelChanges" />
         <Button :label="__('Save Changes')" @click="saveView" />
       </div>
@@ -120,49 +94,34 @@
             <RefreshIcon class="h-4 w-4" />
           </template>
         </Button>
-        <GroupBy
-          v-if="route.params.viewType === 'group_by'"
-          v-model="list"
-          :doctype="doctype"
-          @update="updateGroupBy"
-        />
+        <GroupBy v-if="route.params.viewType === 'group_by'" v-model="list" :doctype="doctype"
+          @update="updateGroupBy" />
         <Filter v-model="list" :doctype="doctype" :default_filters="filters" @update="updateFilter" />
         <SortBy v-if="route.params.viewType !== 'kanban'" v-model="list" :doctype="doctype" @update="updateSort" />
-        <KanbanSettings
-          v-if="route.params.viewType === 'kanban'"
-          v-model="list"
-          :doctype="doctype"
-          @update="updateKanbanSettings"
-        />
-        <ColumnSettings
-          v-else-if="!options.hideColumnsButton"
-          v-model="list"
-          :doctype="doctype"
-          @update="(isDefault) => updateColumns(isDefault)"
-        />
-        <Dropdown
-          v-if="route.params.viewType !== 'kanban'"
-          :options="[
-            {
-              group: __('Options'),
-              hideLabel: true,
-              items: [
-                {
-                  label: __('Export'),
-                  icon: () => h(ExportIcon, { class: 'h-4 w-4' }),
-                  onClick: () => (showExportDialog = true),
-                  condition: () => !options.hideColumnsButton && route.params.viewType !== 'kanban',
-                },
-                {
-                  label: __('Customize quick filters'),
-                  icon: () => h(QuickFilterIcon, { class: 'h-4 w-4' }),
-                  onClick: () => showCustomizeQuickFilter(),
-                  condition: () => isManager(),
-                },
-              ],
-            },
-          ]"
-        >
+        <KanbanSettings v-if="route.params.viewType === 'kanban'" v-model="list" :doctype="doctype"
+          @update="updateKanbanSettings" />
+        <ColumnSettings v-else-if="!options.hideColumnsButton" v-model="list" :doctype="doctype"
+          @update="(isDefault) => updateColumns(isDefault)" />
+        <Dropdown v-if="route.params.viewType !== 'kanban'" :options="[
+          {
+            group: __('Options'),
+            hideLabel: true,
+            items: [
+              {
+                label: __('Export'),
+                icon: () => h(ExportIcon, { class: 'h-4 w-4' }),
+                onClick: () => (showExportDialog = true),
+                condition: () => !options.hideColumnsButton && route.params.viewType !== 'kanban',
+              },
+              {
+                label: __('Customize quick filters'),
+                icon: () => h(QuickFilterIcon, { class: 'h-4 w-4' }),
+                onClick: () => showCustomizeQuickFilter(),
+                condition: () => isManager(),
+              },
+            ],
+          },
+        ]">
           <template #default>
             <Button icon="more-horizontal" />
           </template>
@@ -170,64 +129,46 @@
       </div>
     </div>
   </div>
-  <ViewModal
-    v-model="showViewModal"
-    v-model:view="viewModalObj"
-    :doctype="doctype"
-    :options="{
-      afterCreate: async (v) => {
-        await reloadView()
-        viewUpdated = false
-        router.push({
-          name: route.name,
-          params: { viewType: v.type || 'list' },
-          query: { view: v.name },
-        })
+  <ViewModal v-model="showViewModal" v-model:view="viewModalObj" :doctype="doctype" :options="{
+    afterCreate: async (v) => {
+      await reloadView()
+      viewUpdated = false
+      router.push({
+        name: route.name,
+        params: { viewType: v.type || 'list' },
+        query: { view: v.name },
+      })
+    },
+    afterUpdate: () => {
+      viewUpdated = false
+      reloadView()
+      list.reload()
+    },
+  }" />
+  <Dialog v-model="showExportDialog" :options="{
+    title: __('Export'),
+    actions: [
+      {
+        label: __('Download'),
+        variant: 'solid',
+        onClick: () => exportRows(),
       },
-      afterUpdate: () => {
-        viewUpdated = false
-        reloadView()
-        list.reload()
-      },
-    }"
-  />
-  <Dialog
-    v-model="showExportDialog"
-    :options="{
-      title: __('Export'),
-      actions: [
-        {
-          label: __('Download'),
-          variant: 'solid',
-          onClick: () => exportRows(),
-        },
-      ],
-    }"
-  >
+    ],
+  }">
     <template #body-content>
-      <FormControl
-        variant="outline"
-        :label="__('Export Type')"
-        type="select"
-        :options="[
-          {
-            label: __('Excel'),
-            value: 'Excel',
-          },
-          {
-            label: __('CSV'),
-            value: 'CSV',
-          },
-        ]"
-        v-model="export_type"
-        :placeholder="__('Excel')"
-      />
+      <FormControl variant="outline" :label="__('Export Type')" type="select" :options="[
+        {
+          label: __('Excel'),
+          value: 'Excel',
+        },
+        {
+          label: __('CSV'),
+          value: 'CSV',
+        },
+      ]" v-model="export_type" :placeholder="__('Excel')" />
       <div class="mt-3">
-        <FormControl
-          type="checkbox"
-          :label="__('Export All {0} Record(s)', [list.data.total_count])"
-          v-model="export_all"
-        />
+        <FormControl type="checkbox" :label="__('Export All {0} Record(s)', [list.data.total_count])"
+          v-model="export_all" />
       </div>
     </template>
   </Dialog>
@@ -333,6 +274,7 @@ const currentView = computed(() => {
     label: _view?.label || props.options?.defaultViewName || getViewType().label,
     icon: _view?.icon || getViewType().icon,
     is_default: !_view || _view.is_default,
+    group: _view?.group || '',
   }
 })
 
@@ -364,6 +306,7 @@ const view = ref({
   load_default_columns: false,
   pinned: false,
   public: false,
+  group: false,
 })
 
 const pageLength = computed(() => list.value?.data?.page_length)
@@ -416,6 +359,7 @@ function getParams() {
     load_default_columns: _view?.row || true,
     pinned: _view?.pinned || false,
     public: _view?.public || false,
+    group: _view?.group || false,
   }
 
   return {
@@ -575,9 +519,11 @@ const viewsDropdownOptions = computed(() => {
         })
       }
     })
-    let publicViews = list.value.data.views.filter((v) => v.public)
-    let savedViews = list.value.data.views.filter((v) => !v.pinned && !v.public && !v.is_default)
-    let pinnedViews = list.value.data.views.filter((v) => v.pinned)
+
+    let publicViews = list.value.data.views.filter(v => v.public)
+    let savedViews = list.value.data.views.filter(v => !v.pinned && !v.public && !v.group && !v.is_default )
+    let pinnedViews = list.value.data.views.filter(v => v.pinned)
+    let groupedViews = list.value.data.views.filter(v => v.group)
 
     savedViews.length &&
       _views.push({
@@ -593,6 +539,11 @@ const viewsDropdownOptions = computed(() => {
       _views.push({
         group: __('Pinned Views'),
         items: pinnedViews,
+      })
+    groupedViews.length &&
+      _views.push({
+        group: __('Groups Views'),
+        items: groupedViews,
       })
   }
 
@@ -946,6 +897,7 @@ function create_or_update_default_view(set_default_open = false) {
       rows: defaultParams.value.rows,
       route_name: route.name,
       load_default_columns: view.value.load_default_columns,
+      group: view.value.group,
     }
     viewUpdated.value = false
     setDefaultViewCache()
@@ -971,6 +923,7 @@ function update_custom_view() {
     rows: defaultParams.value.rows,
     route_name: route.name,
     load_default_columns: view.value.load_default_columns,
+    group: view.value.group,
   }
   call('next_crm.ncrm.doctype.crm_view_settings.crm_view_settings.update', {
     view: view.value,
@@ -994,7 +947,7 @@ function updatePageLength(value, loadMore = false) {
 }
 
 // View Actions
-const viewActions = (view) => {
+const viewActions=(view)=>{
   let isDefault = typeof view.name === 'string'
   let _view = getView(view.name)
 
@@ -1044,6 +997,12 @@ const viewActions = (view) => {
         label: _view.pinned ? __('Unpin View') : __('Pin View'),
         icon: () => h(_view.pinned ? UnpinIcon : PinIcon, { class: 'h-4 w-4' }),
         onClick: () => pinView(_view),
+      })
+
+      actions[0].items.push({
+        label: _view.group ? __('Remove Group') : __('Make Group'),
+        icon: () => h(FeatherIcon, { name: _view.group? 'users': 'users', class: 'h-4 w-4' }),
+        onClick: () => groupView(_view),
       })
     }
 
@@ -1145,6 +1104,18 @@ function pinView(v) {
   })
 }
 
+function groupView(v) {
+  call('next_crm.ncrm.doctype.crm_view_settings.crm_view_settings.group', {
+    name: v.name,
+    value: !v.group,
+  }).then(() => {
+    v.group = !v.group
+    reloadView()
+    list.value.reload()
+  })
+}
+
+
 function deleteView(v, close) {
   call('next_crm.ncrm.doctype.crm_view_settings.crm_view_settings.delete', {
     name: v.name,
@@ -1178,6 +1149,7 @@ function saveView() {
     rows: defaultParams.value.rows,
     route_name: route.name,
     load_default_columns: view.value.load_default_columns,
+    group: view.value.group,
   }
   viewModalObj.value = view.value
   viewModalObj.value.mode = 'edit'

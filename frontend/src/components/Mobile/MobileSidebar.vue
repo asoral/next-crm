@@ -182,7 +182,7 @@ import { useRouter } from 'vue-router'
 import * as icons from 'lucide-vue-next'
 import { FeatherIcon } from 'frappe-ui'
 import { useStorage } from '@vueuse/core'
-const { getPinnedViews, getPublicViews } = viewsStore()
+const { getPinnedViews, getPublicViews, getGroupedViews } = viewsStore()
 
 const router = useRouter()
 
@@ -310,6 +310,14 @@ const allViews = computed(() => {
       name: 'Pinned views',
       opened: true,
       views: parseView(getPinnedViews()),
+    })
+  }
+
+  if (getGroupedViews().length){
+    _views.push({
+      name: 'Groups Views',
+      opened: true,
+      views: parseView(getGroupedViews)
     })
   }
   return _views
