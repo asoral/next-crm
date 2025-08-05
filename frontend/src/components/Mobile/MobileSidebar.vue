@@ -213,7 +213,6 @@ const isInstructor = ref(false)
 const pageToEdit = ref(null)
 const settingsStore = useSettings()
 const { sidebarSettings } = settingsStore
-console.log('sidebarSettings', sidebarSettings)
 
 const readOnlyMode = window.read_only_mode
 const crmWebPages = ref([])

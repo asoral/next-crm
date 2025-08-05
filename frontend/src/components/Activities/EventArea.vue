@@ -14,9 +14,10 @@
         </div>
         
         <div class="ml-auto whitespace-nowrap">
-          <Tooltip :text="dateFormat(event.starts_on || event.creation, dateTooltipFormat)">
-            <div class="text-sm text-ink-gray-5">
-              {{ timeAgo(event.starts_on || event.creation) }}
+         
+          <Tooltip :text="dateFormat(event.modified, dateTooltipFormat)">
+            <div class="truncate text-sm text-ink-gray-7">
+              {{ __(timeAgo(event.modified)) }}
             </div>
           </Tooltip>
         </div>
@@ -155,5 +156,6 @@ const sortedEvents = computed(() => {
     return dateB - dateA 
   })
 })
+
 
 </script>
