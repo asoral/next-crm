@@ -237,6 +237,19 @@ const _fields = computed(() => {
   props.fields?.forEach((field) => {
     let df = field?.all_properties
     if (df?.depends_on) evaluate_depends_on(df.depends_on, field)
+
+    if (field.label === 'Title') {
+      const org = data.value?.company_name || ''
+      console.log('org', org)
+      const first = data.value?.first_name || ''
+      const last = data.value?.last_name || ''
+      const combined = [org, first, last].filter(Boolean).join(' ')
+      if (combined) {
+        data.value[field.name] = combined
+      }
+    }
+
+
     all_fields.push({
       ...field,
       filters: df?.link_filters && JSON.parse(df.link_filters),
@@ -245,6 +258,7 @@ const _fields = computed(() => {
   })
   return all_fields
 })
+
 
 function evaluate_depends_on(expression, field) {
   if (expression.substr(0, 5) == 'eval:') {

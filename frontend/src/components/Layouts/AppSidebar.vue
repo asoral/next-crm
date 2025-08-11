@@ -78,7 +78,7 @@
 						</span>
 						<span  v-if="!isSidebarCollapsed"
             class="ml-2 text-lg">
-							{{ __('More') }}
+							{{ __('Dashboards') }}
 						</span>
 					</div>
 					<Button
@@ -310,6 +310,7 @@ const allViews = computed(() => {
       views: links,
     },
   ]
+
   if (getPublicViews().length) {
     _views.push({
       name: 'Public views',
