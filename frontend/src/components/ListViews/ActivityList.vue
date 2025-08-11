@@ -1,14 +1,14 @@
 <template>
     <div class="w-[90%] mx-auto space-y-3">
-      <div v-if="loading" class="text-center text-ink-gray-5">
+      <!-- <div v-if="loading" class="text-center text-ink-gray-5">
         {{ __('Loading activities...') }}
-      </div>
+      </div> -->
   
       <!-- <div v-else-if="activities.length === 0" class="text-center text-ink-gray-5">
         {{ __('No activities found for this customer.') }}
       </div> -->
   
-      <div v-else class="space-y-4">
+      <div  class="space-y-4">
         <div
           v-for="activity in activities"
           :key="activity.name"
@@ -116,45 +116,45 @@ function openEventModal(event) {
   const activities = ref([])
   const { getUser } = usersStore()
   async function fetchActivities() {
-  loading.value = true
+  loading.value = true;
 
   try {
+    // 1️⃣ Fetch Opportunities for this customer
     const oppRes = await fetch('/api/resource/Opportunity?' + new URLSearchParams({
       fields: JSON.stringify(['name']),
       filters: JSON.stringify([['party_name', '=', props.customerId]]),
       limit_page_length: 1000
-    }))
-    // console.log('oppRes', oppRes)
-    const oppJson = await oppRes.json()
-    // console.log('oppRes', oppJson)
+    }));
+    const oppJson = await oppRes.json();
+    const opportunityNames = (oppJson.data || []).map(o => o.name);
 
-    const opportunityNames = (oppJson.data || []).map(o => o.name)
+    // 2️⃣ Fetch all events
+    const eventRes = await fetch('/api/method/next_crm.api.api.get_all_events');
+    const allEvents = (await eventRes.json()).message || [];
 
-    if (!opportunityNames.length) {
-      activities.value = []
-      loading.value = false
-      return
-    }
-
-    const eventRes = await fetch('/api/method/next_crm.api.api.get_all_events')
-    const allEvents = (await eventRes.json()).message || []
-
+    // 3️⃣ Filter for events linked to either Opportunity OR Customer
     const filteredEvents = allEvents.filter(event =>
       (event.event_participants || []).some(participant =>
-        participant.reference_doctype === 'Opportunity' &&
-        opportunityNames.includes(participant.reference_docname)
+        (
+          participant.reference_doctype === 'Opportunity' &&
+          opportunityNames.includes(participant.reference_docname)
+        ) ||
+        (
+          participant.reference_doctype === 'Customer' &&
+          participant.reference_docname === props.customerId
+        )
       )
-    )
-    activities.value = filteredEvents
-    // console.log('filtered events', filteredEvents)
-    props.count.value = filteredEvents.length
+    );
+
+    activities.value = filteredEvents;
+    props.count.value = filteredEvents.length;
 
   } catch (err) {
-    console.error('Error fetching activities:', err)
-    activities.value = []
-    emit('update:count', 0)
+    console.error('Error fetching activities:', err);
+    activities.value = [];
+    emit('update:count', 0);
   } finally {
-    loading.value = false
+    loading.value = false;
   }
 }
 

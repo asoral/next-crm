@@ -642,6 +642,18 @@ const tabs = computed(() => {
       icon: ActivityIcon,
     },
     {
+      name: 'ToDos',
+      label: __('ToDos'),
+      icon: ToDoIcon,
+      count: ref(0)
+    },
+    {
+      name: 'Events',
+      label: __('Events'),
+      icon: EventIcon,
+      count: ref(0)
+    },
+    {
       name: 'Emails',
       label: __('Emails'),
       icon: EmailIcon,
@@ -661,24 +673,13 @@ const tabs = computed(() => {
       condition: () => callEnabled.value,
       count: ref(0)
     },
-    {
-      name: 'ToDos',
-      label: __('ToDos'),
-      icon: ToDoIcon,
-      count: ref(0)
-    },
-    {
-      name: 'Events',
-      label: __('Events'),
-      icon: EventIcon,
-      count: ref(0)
-    },
-    {
-      name: 'Notes',
-      label: __('Notes'),
-      icon: NoteIcon,
-      count: ref(0)
-    },
+  
+    // {
+    //   name: 'Notes',
+    //   label: __('Notes'),
+    //   icon: NoteIcon,
+    //   count: ref(0)
+    // },
     {
       name: 'Attachments',
       label: __('Attachments'),

@@ -25,6 +25,31 @@ def get_all_events():
 
     return events
 
+
+@frappe.whitelist()
+def get_quotations_with_items(opportunity=None, lead=None):
+    filters = {}
+    if opportunity:
+        filters["opportunity"] = opportunity
+    if lead:
+        filters["party_name"] = lead
+
+    quotations = frappe.get_all(
+        "Quotation",
+        fields=["*"],
+        filters=filters,
+        order_by="creation desc"
+    )
+
+    for quotation in quotations:
+        items = frappe.get_all(
+            "Quotation Item",
+            fields=["item_code", "item_name", "qty", "rate", "amount"],
+            filters={"parent": quotation.name},
+        )
+        quotation["items"] = items
+
+    return quotations
 # @frappe.whitelist()
 # def update_sidebar_item(webpage, icon):
 # 	filters = {
