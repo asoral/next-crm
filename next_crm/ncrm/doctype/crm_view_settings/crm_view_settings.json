@@ -16,7 +16,6 @@
   "route_name",
   "pinned",
   "public",
-  "is_note_visible",
   "filters_tab",
   "filters",
   "order_by_tab",
@@ -186,17 +185,11 @@
    "fieldname": "default_open_view",
    "fieldtype": "Check",
    "label": "Default Open View"
-  },
-  {
-   "default": "0",
-   "fieldname": "is_note_visible",
-   "fieldtype": "Check",
-   "label": "Is Note Visible"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-08-08 12:52:00.941490",
+ "modified": "2025-08-12 15:21:47.377661",
  "modified_by": "Administrator",
  "module": "NCRM",
  "name": "CRM View Settings",

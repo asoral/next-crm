@@ -464,6 +464,22 @@ function redirectToLead() {
   router.push(`${routeBase}#activity`);
 }
 
+const isNoteVisible = ref(false)
+
+async function fetchCRMViewSettings() {
+  let settings = await call('frappe.client.get', {
+    doctype: 'NCRM Settings',
+    name: 'NCRM Settings'
+  })
+  
+  if (settings) {
+    isNoteVisible.value = Boolean(settings.custom_is_note_visible)
+  }
+}
+
+onMounted(() => {
+  fetchCRMViewSettings()
+})
 
 const quotationCount = ref(0)
 
@@ -509,6 +525,13 @@ const tabs = computed(() => {
       condition: () => callEnabled.value,
     },
     
+    {
+      name: 'Notes',
+      label: __('Notes'),
+      icon: NoteIcon,
+      count: ref(0),
+      condition: () => isNoteVisible.value
+    },
     {
       name: 'Attachments',
       label: __('Attachments'),
