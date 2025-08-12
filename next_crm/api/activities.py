@@ -211,6 +211,8 @@ def get_opportunity_activities(name):
     todos = todos + get_linked_todos(name)
     events = events + get_linked_events(name)
     attachments = attachments + get_attachments("Opportunity", name)
+    
+    events = list({e["name"]: e for e in events}.values())
 
     activities.sort(key=lambda x: x["creation"], reverse=True)
     activities = handle_multiple_versions(activities)
