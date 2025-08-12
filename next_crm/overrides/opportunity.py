@@ -52,7 +52,7 @@ class OverrideOpportunity(Opportunity):
             if frappe.db.get_single_value(
                 "CRM Settings", "carry_forward_communication_and_comments"
             ):
-                copy_comments(self.opportunity_from, self.party_name, self)
+                # copy_comments(self.opportunity_from, self.party_name, self)
                 link_communications(self.opportunity_from, self.party_name, self)
                 if "frappe_gmail_thread" in frappe.get_installed_apps():
                     link_gmail_threads(self.opportunity_from, self.party_name, self)

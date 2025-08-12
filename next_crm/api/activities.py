@@ -212,25 +212,13 @@ def get_opportunity_activities(name):
     events = events + get_linked_events(name)
     attachments = attachments + get_attachments("Opportunity", name)
     
+    
     events = list({e["name"]: e for e in events}.values())
 
     activities.sort(key=lambda x: x["creation"], reverse=True)
     activities = handle_multiple_versions(activities)
     notes.sort(key=lambda x: x["added_on"], reverse=True)
-    
-    seen_keys = set()
-    unique_activities = []
-    for act in activities:
-        if act["activity_type"] in ["Email", "Comment"]:
-            key = (act["activity_type"], act.get("name"))
-            if key not in seen_keys:
-                seen_keys.add(key)
-                unique_activities.append(act)
-        else:
-            # Keep other types as is
-            unique_activities.append(act)
-
-    activities = unique_activities
+   
     return activities, calls, notes, todos, events, attachments
 
 
