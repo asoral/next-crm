@@ -122,12 +122,7 @@ const props = defineProps({
 const { getUser } = usersStore()
 const { $dialog } = globalStore()
 
-const sortedEvents = computed(() => {
-  return [...props.events]
-    .filter(event => !!event.starts_on) 
-    .sort((a, b) => new Date(b.starts_on) - new Date(a.starts_on)) 
-    .concat(props.events.filter(event => !event.starts_on)) 
-})
+
 
 async function handleStatusChange(status, event) {
   props.modalRef.updateEventStatus(status, event)
