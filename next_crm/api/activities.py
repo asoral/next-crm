@@ -142,6 +142,7 @@ def get_opportunity_activities(name):
 
     for communication in docinfo.communications + docinfo.automated_messages:
         activity = {
+            "name": communication.name,  
             "activity_type": "communication",
             "communication_type": communication.communication_type,
             "creation": communication.creation,
@@ -168,6 +169,7 @@ def get_opportunity_activities(name):
 
         for thread in threads:
             activity = {
+                "name": doc_data["name"],
                 "activity_type": "communication",
                 "communication_type": "Email",
                 "creation": thread["template_data"]["doc"]["creation"],
