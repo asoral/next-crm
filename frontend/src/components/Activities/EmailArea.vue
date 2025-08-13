@@ -1,5 +1,6 @@
 <template>
   <div
+
     class="cursor-pointer flex flex-col rounded-md shadow bg-surface-cards px-3 py-1.5 text-base transition-all duration-300 ease-in-out"
   >
     <div class="-mb-0.5 flex items-center justify-between gap-2 truncate text-ink-gray-9">
@@ -44,7 +45,8 @@
         </div>
       </div>
     </div>
-    <div class="flex flex-col gap-1 text-base leading-5 text-ink-gray-8">
+    <div 
+    class="flex flex-col gap-1 text-base leading-5 text-ink-gray-8">
       <div>{{ activity.data.subject }}</div>
       <div>
         <span class="mr-1 text-ink-gray-5"> {{ __('To') }}: </span>

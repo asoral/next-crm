@@ -13,9 +13,10 @@
           </span>
         </div>
         <div class="ml-auto whitespace-nowrap">
-          <Tooltip :text="dateFormat(event.starts_on || event.creation, dateTooltipFormat)">
-            <div class="text-sm text-ink-gray-5">
-              {{ timeAgo(event.starts_on || event.creation) }}
+         
+          <Tooltip :text="dateFormat(event.modified, dateTooltipFormat)">
+            <div class="truncate text-sm text-ink-gray-7">
+              {{ __(timeAgo(event.modified)) }}
             </div>
           </Tooltip>
         </div>
@@ -156,4 +157,14 @@ function stripHtml(html) {
   div.innerHTML = html
   return div.textContent || div.innerText || ''
 }
+
+const sortedEvents = computed(() => {
+  return [...props.events].sort((a, b) => {
+    const dateA = new Date(a.starts_on || a.creation)
+    const dateB = new Date(b.starts_on || b.creation)
+    return dateB - dateA 
+  })
+})
+
+
 </script>

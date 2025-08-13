@@ -177,6 +177,7 @@ import EmailIcon from '@/components/Icons/EmailIcon.vue'
 import CommentIcon from '@/components/Icons/CommentIcon.vue'
 import PhoneIcon from '@/components/Icons/PhoneIcon.vue'
 import ToDoIcon from '@/components/Icons/ToDoIcon.vue'
+import EventIcon from '@/components/Icons/EventIcon.vue'
 import NoteIcon from '@/components/Icons/NoteIcon.vue'
 import AttachmentIcon from '@/components/Icons/AttachmentIcon.vue'
 import WhatsAppIcon from '@/components/Icons/WhatsAppIcon.vue'
@@ -336,10 +337,27 @@ const breadcrumbs = computed(() => {
   }
 
   items.push({
-    label: lead.data.lead_name || __('Untitled'),
+    label: lead.data.title || lead.data.lead_name || __('Untitled'),
     route: { name: 'Lead', params: { leadId: lead.data.name } },
   })
   return items
+})
+
+const isNoteVisible = ref(false)
+
+async function fetchCRMViewSettings() {
+  let settings = await call('frappe.client.get', {
+    doctype: 'NCRM Settings',
+    name: 'NCRM Settings'
+  })
+  
+  if (settings) {
+    isNoteVisible.value = Boolean(settings.custom_is_note_visible)
+  }
+}
+
+onMounted(() => {
+  fetchCRMViewSettings()
 })
 
 const quotationCount = ref(0)
@@ -358,6 +376,16 @@ const tabs = computed(() => {
       icon: ActivityIcon,
     },
     {
+      name: 'ToDos',
+      label: __('ToDos'),
+      icon: ToDoIcon,
+    },
+    {
+      name: 'Events',
+      label: __('Events'),
+      icon: EventIcon,
+    },
+    {
       name: 'Emails',
       label: __('Emails'),
       icon: EmailIcon,
@@ -373,15 +401,13 @@ const tabs = computed(() => {
       icon: PhoneIcon,
       condition: () => callEnabled.value,
     },
-    {
-      name: 'ToDos',
-      label: __('ToDos'),
-      icon: ToDoIcon,
-    },
+   
     {
       name: 'Notes',
       label: __('Notes'),
       icon: NoteIcon,
+      count: ref(0),
+      condition: () => isNoteVisible.value
     },
     {
       name: 'Attachments',

@@ -971,6 +971,24 @@ const leadAddresses = createResource({
   },
 })
 
+const isNoteVisible = ref(false)
+
+async function fetchCRMViewSettings() {
+  let settings = await call('frappe.client.get', {
+    doctype: 'NCRM Settings',
+    name: 'NCRM Settings'
+  })
+  
+  if (settings) {
+    isNoteVisible.value = Boolean(settings.custom_is_note_visible)
+  }
+}
+
+onMounted(() => {
+  fetchCRMViewSettings()
+})
+
+
 const quotationCount = ref(0)
 
 
@@ -980,6 +998,18 @@ const tabs = computed(() => {
       name: 'Activity',
       label: __('Activity'),
       icon: ActivityIcon,
+      count: ref(0)
+    },
+    {
+      name: 'ToDos',
+      label: __('ToDos'),
+      icon: ToDoIcon,
+      count: ref(0)
+    },
+    {
+      name: 'Events',
+      label: __('Events'),
+      icon: EventIcon,
       count: ref(0)
     },
     {
@@ -1002,23 +1032,13 @@ const tabs = computed(() => {
       condition: () => callEnabled.value,
       count: ref(0)
     },
-    {
-      name: 'ToDos',
-      label: __('ToDos'),
-      icon: ToDoIcon,
-      count: ref(0)
-    },
-    {
-      name: 'Events',
-      label: __('Events'),
-      icon: EventIcon,
-      count: ref(0)
-    },
+   
     {
       name: 'Notes',
       label: __('Notes'),
       icon: NoteIcon,
-      count: ref(0)
+      count: ref(0),
+      condition: () => isNoteVisible.value
     },
     {
       name: 'Attachments',
