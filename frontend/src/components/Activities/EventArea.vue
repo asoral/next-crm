@@ -3,16 +3,15 @@
     <div v-for="(event, i) in sortedEvents" :key="event.name" :id="event.name">
       <div class="mb-1 flex items-center justify-stretch gap-2 py-1 text-base">
         <div class="inline-flex items-center flex-wrap gap-1 text-ink-gray-5">
-          <UserAvatar class="mr-1" :user="event.owner" size="md" />
+          <UserAvatar class="mr-1" :user="event.allocated_to" size="md" />
           <span class="font-medium text-ink-gray-8">
-            {{ getUser(event.owner).full_name }}
+            {{ getUser(event.allocated_to).full_name }}
           </span>
           <span>{{ __('added an') }}</span>
           <span class="max-w-xs truncate font-medium text-ink-gray-8">
             {{ __('Event') }}
           </span>
         </div>
-        
         <div class="ml-auto whitespace-nowrap">
           <Tooltip :text="dateFormat(event.starts_on || event.creation, dateTooltipFormat)">
             <div class="text-sm text-ink-gray-5">
@@ -20,7 +19,6 @@
             </div>
           </Tooltip>
         </div>
-
         <!-- Action Buttons -->
         <div class="mt-2 flex justify-end gap-2">
           <Dropdown :options="eventStatusOptions((status) => handleStatusChange(status, event))" @click.stop>
@@ -72,9 +70,14 @@
         </div>
 
         <div class="mt-2 flex flex-wrap gap-3 items-center text-sm text-ink-gray-7">
-          <div v-if="event.starts_on" class="flex items-center gap-1">
+          <div class="flex items-center gap-1">
             <CalendarIcon class="size-4 text-ink-gray-5" />
-            <span>{{ dateFormat(event.starts_on, 'D MMM, hh:mm a') }}</span>
+            <span v-if="event.starts_on">{{ dateFormat(event.starts_on, 'D MMM, YYYY') }}</span>
+          </div>
+          <div v-if="event.starts_on" class="flex items-center gap-1">
+            <DotIcon class="h-2.5 w-2.5 text-ink-gray-5" :radius="2" />
+            <CalendarIcon class="size-4 text-ink-gray-5" />
+            <span>{{ dateFormat(event.starts_on, 'hh:mm a') }}</span>
           </div>
           <div v-if="event.ends_on" class="flex items-center gap-1">
             <DotIcon class="h-2.5 w-2.5 text-ink-gray-5" :radius="2" />
@@ -83,17 +86,11 @@
           </div>
           <div v-if="event.event_type" class="flex items-center gap-1">
             <DotIcon class="h-2.5 w-2.5 text-ink-gray-5" :radius="2" />
+            <component 
+              :is="event.event_type === 'Private' ? LockIcon : GlobeIcon" 
+              class="h-3 w-3 text-ink-gray-5"
+            />
             <span>{{ event.event_type }}</span>
-          </div>
-          <div v-if="event.event_category" class="flex items-center gap-1">
-            <DotIcon class="h-2.5 w-2.5 text-ink-gray-5" :radius="2" />
-            <span>{{ event.event_category }}</span>
-          </div>
-
-          <div v-if="event.status" class="flex items-center gap-1">
-            <DotIcon class="h-2.5 w-2.5 text-ink-gray-5" :radius="2" />
-            <EventStatusIcon class="!h-2 !w-2" :status="event.status" />
-            <span>{{ event.status }}</span>
           </div>
         </div>
       </div>
@@ -106,39 +103,51 @@
 <script setup>
 import CalendarIcon from '@/components/Icons/CalendarIcon.vue'
 import EventStatusIcon from '@/components/Icons/EventStatusIcon.vue'
+import LockIcon from '@/components/Icons/LockIcon.vue'
+import GlobeIcon from '@/components/Icons/GlobeIcon.vue'
 import DotIcon from '@/components/Icons/DotIcon.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
 import { Tooltip, Dropdown, Button } from 'frappe-ui'
 import { dateFormat, timeAgo, dateTooltipFormat, eventStatusOptions } from '@/utils'
-import { globalStore } from '@/stores/global'
 import { usersStore } from '@/stores/users'
+import { globalStore } from '@/stores/global'
 import { computed } from 'vue'
-
-
-const { getUser } = usersStore()
 
 const props = defineProps({
   events: Array,
   modalRef: Object,
 })
 
+const { getUser } = usersStore()
 const { $dialog } = globalStore()
 
-function handleStatusChange(status, event) {
+const sortedEvents = computed(() => {
+  return [...props.events]
+    .filter(event => !!event.starts_on) 
+    .sort((a, b) => new Date(b.starts_on) - new Date(a.starts_on)) 
+    .concat(props.events.filter(event => !event.starts_on)) 
+})
+
+async function handleStatusChange(status, event) {
   props.modalRef.updateEventStatus(status, event)
 
-  if (['Closed', 'Completed'].includes(status)) {
-    props.modalRef.showEvent({
-      subject: '',
-      status: 'Open',
-      starts_on: '',
-      ends_on: '',
-      event_type: event.event_type || 'Private',
-      reference_type: event.reference_type,
-      reference_name: event.reference_name,
-      custom_from_time: '',
-      custom_to_time: '',
-    })
+  if (status === 'Completed') {
+    try {
+      const res = await fetch(`/api/resource/Event/${event.name}`)
+      const fullEvent = await res.json()
+
+      props.modalRef.showEvent({
+        subject: '',
+        description: '',
+        allocated_to: fullEvent.data.allocated_to,
+        starts_on: '',
+        ends_on: '',
+        status: 'Open',
+        event_type: fullEvent.data.event_type || 'Private',
+      })
+    } catch (err) {
+      console.error('Failed to fetch full Event:', err)
+    }
   }
 }
 
@@ -147,13 +156,4 @@ function stripHtml(html) {
   div.innerHTML = html
   return div.textContent || div.innerText || ''
 }
-
-const sortedEvents = computed(() => {
-  return [...props.events].sort((a, b) => {
-    const dateA = new Date(a.starts_on || a.creation)
-    const dateB = new Date(b.starts_on || b.creation)
-    return dateB - dateA 
-  })
-})
-
 </script>

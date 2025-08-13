@@ -164,6 +164,7 @@ import CheckInIcon from '@/components/Icons/CheckIcon.vue'
 import ContactsIcon from '@/components/Icons/ContactsIcon.vue'
 import CustomersIcon from '@/components/Icons/CustomersIcon.vue'
 import ToDoIcon from '@/components/Icons/ToDoIcon.vue'
+import EventsIcon from '@/components/Icons/EventIcon.vue'
 import PhoneIcon from '@/components/Icons/PhoneIcon.vue'
 import NotificationsIcon from '@/components/Icons/NotificationsIcon.vue'
 import SidebarLink from '@/components/SidebarLink.vue'
@@ -269,6 +270,11 @@ const links = [
     label: 'ToDos',
     icon: ToDoIcon,
     to: 'ToDos',
+  },
+  {
+    label: 'Events',
+    icon: EventsIcon,
+    to: 'Events',
   },
   {
     label: 'Call Logs',

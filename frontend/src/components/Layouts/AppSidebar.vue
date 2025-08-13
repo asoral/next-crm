@@ -150,6 +150,7 @@ import OpportunitiesIcon from '@/components/Icons/OpportunitiesIcon.vue'
 import ContactsIcon from '@/components/Icons/ContactsIcon.vue'
 import CustomersIcon from '@/components/Icons/CustomersIcon.vue'
 import ToDoIcon from '@/components/Icons/ToDoIcon.vue'
+import EventsIcon from '@/components/Icons/EventIcon.vue'
 import FileTextIcon from '@/components/Icons/FileTextIcon.vue'
 import PhoneIcon from '@/components/Icons/PhoneIcon.vue'
 import ProspectsIcon from '@/components/Icons/ProspectsIcon.vue'
@@ -243,6 +244,11 @@ const links = [
     to: 'ToDos',
   },
   {
+    label: 'Events',
+    icon: EventsIcon,
+    to: 'Events',
+  },
+  {
     label: 'Call Logs',
     icon: PhoneIcon,
     to: 'Call Logs',
@@ -328,6 +334,8 @@ function getIcon(routeName, icon) {
       return AddressIcon
     case 'Customers':
       return CustomersIcon
+    case 'Events':
+      return EventsIcon
     case 'Call Logs':
       return PhoneIcon
     case 'Reports':
