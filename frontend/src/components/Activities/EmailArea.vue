@@ -1,5 +1,7 @@
 <template>
   <div
+  v-if="shouldRender"
+
     class="cursor-pointer flex flex-col rounded-md shadow bg-surface-cards px-3 py-1.5 text-base transition-all duration-300 ease-in-out"
   >
     <div class="-mb-0.5 flex items-center justify-between gap-2 truncate text-ink-gray-9">
@@ -76,6 +78,23 @@ import { computed } from 'vue'
 const props = defineProps({
   activity: Object,
   emailBox: Object,
+})
+const renderedIds =
+  typeof window !== 'undefined'
+    ? (window.__renderedCommunications =
+        window.__renderedCommunications || new Set())
+    : new Set()
+
+const shouldRender = computed(() => {
+  if (props.activity?.activity_type === 'communication') {
+    const id = props.activity?.name
+    if (!id) return true
+    if (renderedIds.has(id)) {
+      return false
+    }
+    renderedIds.add(id)
+  }
+  return true
 })
 
 function reply(email, reply_all = false) {
