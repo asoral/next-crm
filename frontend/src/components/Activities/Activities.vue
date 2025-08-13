@@ -499,7 +499,7 @@ const activities = computed(() => {
       ...todo,
       activity_type: 'todo',
       icon: ToDoIcon, 
-      creation: todo.creation,
+      creation: todo.last_updated_on || todo.modified || todo.creation,
       owner: todo.owner,
       owner_name: todo.owner_name,
       name: todo.name,
@@ -507,7 +507,12 @@ const activities = computed(() => {
       value: 'added a ToDo',
     }))
 
-    _activities = [..._activities, ...notesAsActivities, ...todosAsActivities]
+    _activities = [
+    ..._activities,
+    ...notesAsActivities,
+    ...todosAsActivities
+  ]
+
   } else if (title.value == 'Emails') {
     if (!all_activities.data?.versions) return []
     _activities = all_activities.data.versions.filter((activity) => activity.activity_type === 'communication')
