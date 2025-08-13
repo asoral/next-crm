@@ -164,6 +164,7 @@ import CheckInIcon from '@/components/Icons/CheckIcon.vue'
 import ContactsIcon from '@/components/Icons/ContactsIcon.vue'
 import CustomersIcon from '@/components/Icons/CustomersIcon.vue'
 import ToDoIcon from '@/components/Icons/ToDoIcon.vue'
+import EventsIcon from '@/components/Icons/EventIcon.vue'
 import PhoneIcon from '@/components/Icons/PhoneIcon.vue'
 import NotificationsIcon from '@/components/Icons/NotificationsIcon.vue'
 import SidebarLink from '@/components/SidebarLink.vue'
@@ -182,7 +183,7 @@ import { useRouter } from 'vue-router'
 import * as icons from 'lucide-vue-next'
 import { FeatherIcon } from 'frappe-ui'
 import { useStorage } from '@vueuse/core'
-const { getPinnedViews, getPublicViews } = viewsStore()
+const { getPinnedViews, getPublicViews, getGroupedViews } = viewsStore()
 
 const router = useRouter()
 
@@ -270,6 +271,11 @@ const links = [
     to: 'ToDos',
   },
   {
+    label: 'Events',
+    icon: EventsIcon,
+    to: 'Events',
+  },
+  {
     label: 'Call Logs',
     icon: PhoneIcon,
     to: 'Call Logs',
@@ -309,6 +315,14 @@ const allViews = computed(() => {
       name: 'Pinned views',
       opened: true,
       views: parseView(getPinnedViews()),
+    })
+  }
+
+  if (getGroupedViews().length){
+    _views.push({
+      name: 'Groups Views',
+      opened: true,
+      views: parseView(getGroupedViews)
     })
   }
   return _views

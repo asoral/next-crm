@@ -152,11 +152,10 @@
       </SidebarLink>
     </div>
     <PageModal
-	v-model="showPageModal"
-	:page="pageToEdit"
-	:reloadSidebar="{ reload: fetchWebPages }"
-/>
-
+      v-model="showPageModal"
+      :page="pageToEdit"
+      :reloadSidebar="{ reload: fetchWebPages }"
+    />
     <Notifications />
   </div>
 </template>
@@ -172,6 +171,7 @@ import OpportunitiesIcon from '@/components/Icons/OpportunitiesIcon.vue'
 import ContactsIcon from '@/components/Icons/ContactsIcon.vue'
 import CustomersIcon from '@/components/Icons/CustomersIcon.vue'
 import ToDoIcon from '@/components/Icons/ToDoIcon.vue'
+import EventsIcon from '@/components/Icons/EventIcon.vue'
 import FileTextIcon from '@/components/Icons/FileTextIcon.vue'
 import PhoneIcon from '@/components/Icons/PhoneIcon.vue'
 import ProspectsIcon from '@/components/Icons/ProspectsIcon.vue'
@@ -184,9 +184,7 @@ import { unreadNotificationsCount, notificationsStore } from '@/stores/notificat
 import { FeatherIcon } from 'frappe-ui'
 import { useStorage } from '@vueuse/core'
 import { computed, h, ref, watch } from 'vue'
-import CheckInIcon from '@/components/Icons/CheckIcon.vue' 
-// import { getSidebarLinks } from '@/utils'
-// import { usersStore } from '@/stores/user'
+import CheckInIcon from '@/components/Icons/CheckIcon.vue'
 import { sessionStore } from '@/stores/session'
 import { useSidebar } from '@/stores/sidebar'
 import { useSettings } from '@/stores/settings'
@@ -196,52 +194,34 @@ import { useRouter } from 'vue-router'
 import * as icons from 'lucide-vue-next'
 
 const router = useRouter()
-
-const navigateToCRMPage = (link) => {
-  router.push({
-    name: 'CRMWebPage',
-    params: {
-      webPageName: link.web_page,
-    },
-  })
-}
-const { getPinnedViews, getPublicViews } = viewsStore()
+const { getPinnedViews, getPublicViews, getGroupedViews } = viewsStore()
 const { toggle: toggleNotificationPanel } = notificationsStore()
-
 const isSidebarCollapsed = useStorage('isSidebarCollapsed', false)
 const { user } = sessionStore()
 let sidebarStore = useSidebar()
-
 const showPageModal = ref(false)
-const isModerator = ref(false)
-const isInstructor = ref(false)
 const pageToEdit = ref(null)
 const settingsStore = useSettings()
 const { sidebarSettings } = settingsStore
-console.log('sidebarSettings', sidebarSettings)
-
-const readOnlyMode = window.read_only_mode
 const crmWebPages = ref([])
 
 const fetchWebPages = async () => {
-	const response = await fetch('/api/resource/CRM Web Page?fields=["name","page_name","icon"]')
-	const data = await response.json()
-	if (data.data) {
-		crmWebPages.value = data.data.map((page) => ({
-	label: page.page_name,
-	icon: page.icon || PinIcon, 
-	web_page: page.name,
-}))
-
-	}
+  const response = await fetch('/api/resource/CRM Web Page?fields=["name","page_name","icon"]')
+  const data = await response.json()
+  if (data.data) {
+    crmWebPages.value = data.data.map((page) => ({
+      label: page.page_name,
+      icon: page.icon || PinIcon, 
+      web_page: page.name,
+    }))
+  }
 }
 
 fetchWebPages()
 
 watch(showPageModal, (val) => {
-	if (!val) fetchWebPages()
+  if (!val) fetchWebPages()
 })
-
 
 const links = [
   {
@@ -285,6 +265,11 @@ const links = [
     to: 'ToDos',
   },
   {
+    label: 'Events',
+    icon: EventsIcon,
+    to: 'Events',
+  },
+  {
     label: 'Call Logs',
     icon: PhoneIcon,
     to: 'Call Logs',
@@ -295,10 +280,10 @@ const links = [
     to: 'Email Templates',
   },
   {
-  label: 'Check In',
-  icon: CheckInIcon,
-  to: 'CheckIn',
-},
+    label: 'Check In',
+    icon: CheckInIcon,
+    to: 'CheckIn',
+  },
 ]
 
 const allViews = computed(() => {
@@ -311,19 +296,32 @@ const allViews = computed(() => {
     },
   ]
 
-  if (getPublicViews().length) {
+
+  const publicViews = getPublicViews()
+  const pinnedViews = getPinnedViews()
+  const groupedViews = getGroupedViews()
+
+  if (publicViews.length) {
     _views.push({
-      name: 'Public views',
+      name: 'Public Views',
       opened: true,
-      views: parseView(getPublicViews()),
+      views: parseView(publicViews),
     })
   }
 
-  if (getPinnedViews().length) {
+  if (pinnedViews.length) {
     _views.push({
-      name: 'Pinned views',
+      name: 'Pinned Views',
       opened: true,
-      views: parseView(getPinnedViews()),
+      views: parseView(pinnedViews),
+    })
+  }
+
+  if(groupedViews.length){
+    _views.push({
+      name: 'Groups View',
+      opened: true,
+      views: parseView(groupedViews)
     })
   }
   return _views
@@ -357,8 +355,8 @@ function getIcon(routeName, icon) {
       return AddressIcon
     case 'Customers':
       return CustomersIcon
-    case 'Notes':
-      return NoteIcon
+    case 'Events':
+      return EventsIcon
     case 'Call Logs':
       return PhoneIcon
     case 'Reports':
@@ -366,6 +364,15 @@ function getIcon(routeName, icon) {
     default:
       return PinIcon
   }
+}
+
+const navigateToCRMPage = (link) => {
+  router.push({
+    name: 'CRMWebPage',
+    params: {
+      webPageName: link.web_page,
+    },
+  })
 }
 
 const confirmDelete = async (link) => {
@@ -395,26 +402,24 @@ const deletePage = async (link) => {
   }
 }
 
-
-
 const openPageModal = (link) => {
-	showPageModal.value = true
-	pageToEdit.value = link
+  showPageModal.value = true
+  pageToEdit.value = link
 }
 
 const toggleSidebar = () => {
-	sidebarStore.isSidebarCollapsed = !sidebarStore.isSidebarCollapsed
-	localStorage.setItem(
-		'isSidebarCollapsed',
-		JSON.stringify(sidebarStore.isSidebarCollapsed)
-	)
+  sidebarStore.isSidebarCollapsed = !sidebarStore.isSidebarCollapsed
+  localStorage.setItem(
+    'isSidebarCollapsed',
+    JSON.stringify(sidebarStore.isSidebarCollapsed)
+  )
 }
 
 const toggleWebPages = () => {
-	sidebarStore.isWebpagesCollapsed = !sidebarStore.isWebpagesCollapsed
-	localStorage.setItem(
-		'isWebpagesCollapsed',
-		JSON.stringify(sidebarStore.isWebpagesCollapsed)
-	)
+  sidebarStore.isWebpagesCollapsed = !sidebarStore.isWebpagesCollapsed
+  localStorage.setItem(
+    'isWebpagesCollapsed',
+    JSON.stringify(sidebarStore.isWebpagesCollapsed)
+  )
 }
 </script>

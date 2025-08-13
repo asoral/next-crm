@@ -46,6 +46,12 @@ const routes = [
     component: () => import('@/pages/ToDos.vue'),
   },
   {
+  path: '/events',
+  name: 'Events',
+  component: () => import('@/pages/Events.vue'),
+  meta: { title: 'Events' }
+  },
+  {
     alias: '/contacts',
     path: '/contacts/view/:viewType?',
     name: 'Contacts',

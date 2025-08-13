@@ -292,22 +292,26 @@ async function updateEvent() {
       })
     } else {
       let doc = {
-        doctype: 'Event',
-        reference_type: props.doctype,
-        reference_name: props.doc || null,
-        event_participants: [
-          {
-            reference_doctype: props.doctype,
-            reference_docname: props.doc || null,
-          },
-          ...event_participants.value.map((email) => ({
-            reference_doctype: 'User',
-            reference_docname: 'Guest',
-            email: email,
-          })),
-        ],
-        ..._event.value,
-      }
+      doctype: 'Event',
+      reference_type: props.doctype,
+      reference_name: props.doc || null,
+      event_participants: [
+        ...(props.doc
+          ? [{
+              reference_doctype: props.doctype,
+              reference_docname: props.doc,
+            }]
+          : []),
+        // Always include the email-based participants
+        ...event_participants.value.map((email) => ({
+          reference_doctype: 'User',
+          reference_docname: 'Guest',
+          email: email,
+        })),
+      ],
+      ..._event.value,
+    }
+
       let d = await call('frappe.client.insert', {
         doc: doc,
       })
