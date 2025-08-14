@@ -51,6 +51,24 @@ class Event(Event):
                 "width": "8rem",
             },
             {
+                "label": "Description",
+                "type": "Text Editor",
+                "key": "description",
+                "width": "8rem",
+            },
+            {
+                "label": "Start On",
+                "type": "Datetime",
+                "key": "starts_on",
+                "width": "8rem",
+            },
+            {
+                "label": "End On",
+                "type": "Datetime",
+                "key": "ends_on",
+                "width": "8rem",
+            },
+            {
                 "label": "Last Modified",
                 "type": "Datetime",
                 "key": "modified",
@@ -67,6 +85,8 @@ class Event(Event):
         rows = [
             "name",
             "subject",
+            "starts_on",
+            "ends_on",
             "description",
             "modified_by",
             "status",
