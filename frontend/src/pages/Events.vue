@@ -93,29 +93,26 @@
             size="sm"
           />
         </div>
-        <div
-          v-if="['starts_on', 'ends_on', 'modified', 'creation'].includes(fieldName)"
-          class="truncate text-base"
-        >
-          <Tooltip :text="getRow(itemName, fieldName).label">
-            <div>{{ getRow(itemName, fieldName).timeAgo }}</div>
-          </Tooltip>
-        </div>
-        <div
-          v-else-if="fieldName == 'description'"
-          class="truncate text-base max-h-44"
-        >
-          <TextEditor
-            v-if="getRow(itemName, fieldName).label"
-            :content="getRow(itemName, fieldName).label || ''"
-            :editable="false"
-            editor-class="!prose-sm max-w-none focus:outline-none"
-            class="flex-1 overflow-hidden"
-          />
-        </div>
-        <div v-else class="truncate text-base">
-          {{ getRow(itemName, fieldName).label }}
-        </div>
+       <div v-if="['starts_on','ends_on','modified','creation'].includes(fieldName)">
+  <Tooltip :text="getRow(itemName, fieldName)?.label">
+    <div>{{ getRow(itemName, fieldName)?.timeAgo }}</div>
+  </Tooltip>
+</div>
+
+<!-- <div v-else-if="fieldName === 'description'">
+  <TextEditor
+    v-if="getRow(itemName, fieldName)?.label"
+    :content="String(getRow(itemName, fieldName).label)"
+    :editable="false"
+    editor-class="!prose-sm max-w-none focus:outline-none"
+    class="flex-1 overflow-hidden"
+  />
+</div> -->
+
+<div v-else>
+  {{ getRow(itemName, fieldName)?.label }}
+</div>
+
       </div>
     </template>
     <template #actions="{ itemName }">
@@ -272,48 +269,50 @@ function getKanbanRows(data) {
 }
 
 function parseRows(rows) {
-  if (!rows) return []
-  
-  return rows.map((event) => {
-    let _rows = { ...event }
+  if (!rows) return [];
 
-    // ✅ Ensure `name` stays a plain string (important for bulk actions)
-    _rows.name = event.name
+  return rows.map((event, idx) => {
+    let _rows = { ...event };
+    _rows.name = event.name;
 
     events.value?.data.rows.forEach((row) => {
-      if (row === 'name') {
-        // Skip converting `name` to object
-        return
-      }
+      if (row === 'name') return;
 
       if (['starts_on', 'ends_on', 'modified', 'creation'].includes(row)) {
-        _rows[row] = {
-          label: dateFormat(event[row], dateTooltipFormat),
-          timeAgo: __(timeAgo(event[row])),
-        }
+        const dateVal = event[row] || null;
+        _rows[row] = dateVal
+          ? {
+              label: dateFormat(dateVal, dateTooltipFormat),
+              timeAgo: __(timeAgo(dateVal)),
+            }
+          : { label: '', timeAgo: '' };
       } 
       else if (row === 'allocated_to') {
         _rows[row] = {
           label: event.allocated_to && getUser(event.allocated_to).full_name,
           ...(event.allocated_to && getUser(event.allocated_to)),
-        }
+        };
       } 
       else if (row === 'event_type') {
         _rows[row] = {
           label: event.event_type,
           icon: event.event_type === 'Private' ? 'lock' : 'globe'
-        }
+        };
       } 
       else {
-        _rows[row] = typeof event[row] === 'object' 
-          ? event[row] 
-          : { label: event[row] }
+        const val = event[row];
+        _rows[row] =
+          typeof val === 'object' && val !== null
+            ? val
+            : { label: val ?? '' };
       }
-    })
+    });
 
-    return _rows
-  })
+    return _rows;
+  });
 }
+
+
 
 
 async function getEventData(name) {

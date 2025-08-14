@@ -142,6 +142,7 @@ override_doctype_class = {
     "Customize Form": "next_crm.overrides.customize_form.CustomizeFormOverride",
     "Opportunity": "next_crm.overrides.opportunity.OverrideOpportunity",
     "ToDo": "next_crm.overrides.todo.ToDo",
+    "Event": "next_crm.overrides.event.Event",
     "Prospect": "next_crm.overrides.prospect.Prospect",
     "Address": "next_crm.overrides.address.CustomAddress",
     "Report": "next_crm.overrides.report.OverrideReport",
