@@ -33,15 +33,16 @@
     <ListRows class="mx-3 sm:mx-5" id="list-rows">
       <ListRow v-for="row in rows" :key="row.name" v-slot="{ idx, column, item }" :row="row">
         <div v-if="['starts_on', 'ends_on'].includes(column.key)">
-          <Tooltip :text="item && dateFormat(item, 'ddd, MMM D, YYYY hh:mm A')">
-            <div class="flex items-center gap-2 truncate text-base">
-              <CalendarIcon />
-              <div v-if="item" class="truncate">
-                {{ dateFormat(item, 'D MMM, YYYY hh:mm A') }}
-              </div>
-            </div>
-          </Tooltip>
-        </div>
+  <Tooltip :text="item?.label">
+    <div class="flex items-center gap-2 truncate text-base">
+      <CalendarIcon />
+      <div v-if="item?.label" class="truncate">
+        {{ dateFormat(item.label, 'D MMM, YYYY hh:mm A') }}
+      </div>
+    </div>
+  </Tooltip>
+</div>
+
 
         <ListRowItem v-else :item="item">
           <template #default="{ label }">
@@ -72,11 +73,12 @@
               />
               <span v-if="item">{{ item.full_name || item }}</span>
             </div>
-            <div
-              v-else-if="column.type === 'Text Editor'"
-              v-html="item"
-              class="truncate text-base h-4 [&>p]:truncate"
-            />
+           <div
+  v-else-if="column.type === 'Text Editor'"
+  v-html="item?.label"
+  class="truncate text-base h-4 [&>p]:truncate"
+/>
+
             <div v-else-if="column.type === 'Check'">
               <FormControl type="checkbox" :modelValue="item" :disabled="true" class="text-ink-gray-9" />
             </div>
@@ -175,6 +177,8 @@ const props = defineProps({
   },
 })
 console.log('props', props.rows)
+console.log('props columns', props.columns)
+
 
 const emit = defineEmits([
   'loadMore',
