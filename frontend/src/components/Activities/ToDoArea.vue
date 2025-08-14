@@ -13,13 +13,15 @@
           </span>
         </div>
         <div class="ml-auto whitespace-nowrap">
-          <Tooltip :text="dateFormat(todo.date || todo.creation, dateTooltipFormat)">
-            <div class="text-sm text-ink-gray-5">
-              {{ timeAgo(todo.date || todo.creation) }}
+         
+          <Tooltip :text="dateFormat(todo.modified, dateTooltipFormat)">
+            <div class="truncate text-sm text-ink-gray-7">
+              {{ __(timeAgo(todo.modified)) }}
             </div>
           </Tooltip>
         </div>
-           <!-- Action Buttons -->
+        
+        
            <div class="mt-2 flex justify-end gap-2">
             <Dropdown :options="todoStatusOptions((status) => handleStatusChange(status, todo))" @click.stop>
               <Tooltip :text="__('Change Status')">
@@ -120,14 +122,15 @@ const props = defineProps({
   modalRef: Object,
 })
 
+console.log('time', props.todos)
 const { getUser } = usersStore()
 const { $dialog } = globalStore()
 
 const sortedTodos = computed(() => {
   return [...props.todos]
-    .filter(todo => !!todo.date) 
-    .sort((a, b) => new Date(b.date) - new Date(a.date)) 
-    .concat(props.todos.filter(todo => !todo.date)) 
+    .filter(todo => !!todo.modified) 
+    .sort((a, b) => new Date(b.modified) - new Date(a.modified)) 
+    .concat(props.todos.filter(todo => !todo.modified)) 
 })
 
 
@@ -160,4 +163,10 @@ function stripHtml(html) {
   div.innerHTML = html
   return div.textContent || div.innerText || ''
 }
+
+function convertToLocal(dateString) {
+  const date = new Date(dateString.replace(' ', 'T'));
+  return date;
+}
+
 </script>

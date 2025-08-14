@@ -142,6 +142,7 @@ def get_opportunity_activities(name):
 
     for communication in docinfo.communications + docinfo.automated_messages:
         activity = {
+            "name": communication.name,  
             "activity_type": "communication",
             "communication_type": communication.communication_type,
             "creation": communication.creation,
@@ -168,6 +169,7 @@ def get_opportunity_activities(name):
 
         for thread in threads:
             activity = {
+                "name": doc_data["name"],
                 "activity_type": "communication",
                 "communication_type": "Email",
                 "creation": thread["template_data"]["doc"]["creation"],
@@ -211,11 +213,14 @@ def get_opportunity_activities(name):
     todos = todos + get_linked_todos(name)
     events = events + get_linked_events(name)
     attachments = attachments + get_attachments("Opportunity", name)
+    
+    
+    events = list({e["name"]: e for e in events}.values())
 
     activities.sort(key=lambda x: x["creation"], reverse=True)
     activities = handle_multiple_versions(activities)
     notes.sort(key=lambda x: x["added_on"], reverse=True)
-
+   
     return activities, calls, notes, todos, events, attachments
 
 
@@ -389,7 +394,7 @@ def get_lead_activities(name, get_events=True):
     activities.sort(key=lambda x: x["creation"], reverse=True)
     activities = handle_multiple_versions(activities)
     notes.sort(key=lambda x: x["added_on"], reverse=True)
-
+    
     return activities, calls, notes, todos, events, attachments
 
 

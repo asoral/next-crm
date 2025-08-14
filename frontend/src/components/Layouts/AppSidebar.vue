@@ -59,59 +59,80 @@
           </nav>
         </Section>
       </div>
-      <div class="mt-4">
-        <div
-          class="flex w-full items-center justify-between duration-300 ease-in-out px-2 py-1"
-          @click="toggleWebPages"
-        >
-          <div class="flex items-center text-sm text-ink-gray-5 my-1">
-            <span class="grid h-5 w-6 flex-shrink-0 place-items-center" v-if="!isSidebarCollapsed">
-              <FeatherIcon
-                name="chevron-right"
-                class="h-4 w-4 stroke-1.5 text-ink-gray-9 transition-all duration-300 ease-in-out"
-                :class="{ 'rotate-90': !sidebarStore.isWebpagesCollapsed }"
-              />
-            </span>
-            <span v-if="!isSidebarCollapsed" class="ml-2 text-lg">
-              {{ __('More') }}
-            </span>
-          </div>
-          <Button variant="ghost" @click="openPageModal()">
-            <FeatherIcon name="plus" class="h-4 w-4 text-ink-gray-7 stroke-1.5" />
-          </Button>
-        </div>
-        <div class="flex flex-col transition-all duration-300 ease-in-out">
-          <div
-            v-for="link in crmWebPages"
-            :key="link.web_page"
-            class="mx-2 my-0.5 flex h-7 cursor-pointer items-center rounded text-ink-gray-7 duration-300 ease-in-out hover:bg-surface-gray-2 focus:outline-none focus-visible:rounded focus-visible:ring-2 focus-visible:ring-gray-400"
-          >
-            <div
-              class="flex w-full items-center justify-between duration-300 ease-in-out px-2 py-1"
-              @click="navigateToCRMPage(link)"
+      <div
+				class="mt-4"
+			>
+				<div
+        class="flex w-full items-center justify-between duration-300 ease-in-out px-2 py-1"
+        @click="toggleWebPages"
+				>
+					<div
+						class="flex items-center text-sm text-ink-gray-5 my-1"
+					>
+						<span class="grid h-5 w-6 flex-shrink-0 place-items-center"       v-if="!isSidebarCollapsed"
             >
-              <div class="flex items-center truncate">
-                <span class="grid flex-shrink-0 place-items-center">
-                  <component :is="icons[link.icon]" class="size-4 text-ink-gray-7" />
-                </span>
-                <span
-                  class="ml-2 text-sm truncate"
-                  :class="isSidebarCollapsed ? 'opacity-0 w-0 ml-0' : 'opacity-100 w-auto'"
-                >
-                  {{ link.label }}
-                </span>
-              </div>
-              <button
-                v-if="!isSidebarCollapsed"
-                class="ml-2 p-1 text-gray-500 hover:text-gray-600"
-                @click.stop="confirmDelete(link)"
-              >
-                <FeatherIcon name="trash" class="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+							<FeatherIcon name="chevron-right"
+								class="h-4 w-4 stroke-1.5 text-ink-gray-9 transition-all duration-300 ease-in-out"
+								:class="{ 'rotate-90': !sidebarStore.isWebpagesCollapsed }"
+							/>
+						</span>
+						<span  v-if="!isSidebarCollapsed"
+            class="ml-2 text-lg">
+							{{ __('Dashboards') }}
+						</span>
+					</div>
+					<Button
+						variant="ghost"
+						@click="openPageModal()"
+					>
+						
+							<FeatherIcon name="plus" class="h-4 w-4 text-ink-gray-7 stroke-1.5" />
+						
+					</Button>
+				</div>
+				<div
+	class="flex flex-col transition-all duration-300 ease-in-out"
+  >
+<div
+  v-for="link in crmWebPages"
+  :key="link.web_page"
+  class="mx-2 my-0.5 flex h-7 cursor-pointer items-center rounded text-ink-gray-7 duration-300 ease-in-out hover:bg-surface-gray-2 focus:outline-none focus-visible:rounded focus-visible:ring-2 focus-visible:ring-gray-400"
+>
+  <div
+    class="flex w-full items-center justify-between duration-300 ease-in-out px-2 py-1"
+    @click="navigateToCRMPage(link)"
+  >
+    <div class="flex items-center truncate">
+      <span class="grid flex-shrink-0 place-items-center"
+      >
+        <component
+  :is="icons[link.icon]"
+  class="size-4 text-ink-gray-7"
+/>
+
+      </span>
+      <span
+        class="ml-2 text-sm truncate"
+        :class="isSidebarCollapsed ? 'opacity-0 w-0 ml-0' : 'opacity-100 w-auto'"
+      >
+        {{ link.label }}
+      </span>
+    </div>
+    <button
+    v-if="!isSidebarCollapsed"
+
+    class="ml-2 p-1 text-gray-500 hover:text-gray-600"
+    @click.stop="confirmDelete(link)"
+  >
+    <FeatherIcon name="trash" class="h-4 w-4" />
+  </button>
+  
+  </div>
+</div>
+
+</div>
+
+			</div>
     </div>
     <div class="m-2 flex flex-col gap-1">
       <SidebarLink

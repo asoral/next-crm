@@ -132,6 +132,9 @@
         <div v-if="activity.activity_type == 'communication'" class="pb-5 mt-px">
           <EmailArea :activity="activity" :emailBox="emailBox" />
         </div>
+        <div class="mb-4" v-else-if="activity.activity_type == 'todo'" >
+          <ToDoArea :modalRef="modalRef" :todos="[activity]" :doctype="doctype" />
+        </div>
         <div class="mb-4" :id="activity.name" v-else-if="activity.activity_type == 'comment'">
           <CommentArea :activity="activity" />
         </div>
@@ -470,6 +473,8 @@ const activities = computed(() => {
   let _activities = []
   if (title.value == 'Activity') {
     _activities = get_activities()
+    // console.log("Activity tab data:", _activities) // 👈 Add this
+
 
     if (Boolean(doc?.value?.data?.hide_comments_tab)) {
       _activities = _activities.filter((activity) => activity.activity_type !== 'comment')
@@ -490,7 +495,24 @@ const activities = computed(() => {
       attachments: note.attachments || [],
     }))
 
-    _activities = [..._activities, ...notesAsActivities]
+    const todosAsActivities = (all_activities.data?.todos || []).map((todo) => ({
+      ...todo,
+      activity_type: 'todo',
+      icon: ToDoIcon, 
+      creation: todo.last_updated_on || todo.modified || todo.creation,
+      owner: todo.owner,
+      owner_name: todo.owner_name,
+      name: todo.name,
+      type: 'todo',
+      value: 'added a ToDo',
+    }))
+
+    _activities = [
+    ..._activities,
+    ...notesAsActivities,
+    ...todosAsActivities
+  ]
+
   } else if (title.value == 'Emails') {
     if (!all_activities.data?.versions) return []
     _activities = all_activities.data.versions.filter((activity) => activity.activity_type === 'communication')
@@ -502,6 +524,8 @@ const activities = computed(() => {
     return sortByCreation(all_activities.data.calls)
   } else if (title.value == 'ToDos') {
     if (!all_activities.data?.todos) return []
+    console.log("ToDos tab data:", all_activities.data.todos) // 👈 Add this
+
     return sortByCreation(all_activities.data.todos)
   } else if (title.value == 'Events') {
     if (!all_activities.data?.events) return []

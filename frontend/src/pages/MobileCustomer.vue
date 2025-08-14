@@ -268,6 +268,11 @@
             label="Description"
             v-model="activityForm.description"
           />
+          <Checkbox
+          v-model="activityForm.createOpportunity"
+          label="Create Opportunity"
+          :checked="false"
+        />
         </div>
       </template>
     </Dialog>
@@ -318,7 +323,8 @@ import {
   Dialog,
   Input,
   Select,
-  Textarea
+  Textarea,
+  Checkbox
 } from 'frappe-ui'
 import { h, computed, ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -791,49 +797,58 @@ const activityForm = ref({
   description: '',
 })
 
-// Close dropdown and show modal
 function selectActivity(option) {
   selectedActivity.value = option
   showDropdown.value = false
   showActivityModal.value = true
 }
 
+
 async function createActivity() {
   try {
-    const opportunity = await call('frappe.client.insert', {
-      doc: {
-        doctype: 'Opportunity',
-        customer: customer.doc.name,
-        opportunity_from: 'Customer',
-        party_name:customer.doc.name,
-        status: 'Open',
-      },
-    })
-// console.log("opportunity", opportunity.name)
+    let opportunityName = null;
+
+    if (activityForm.value.createOpportunity) {
+      const opportunity = await call('frappe.client.insert', {
+        doc: {
+          doctype: 'Opportunity',
+          customer: customer.doc.name,
+          opportunity_from: 'Customer',
+          party_name: customer.doc.name,
+          status: 'Open',
+        },
+      });
+      opportunityName = opportunity.name;
+    }
+
+    
     const event = await call('frappe.client.insert', {
       doc: {
         doctype: 'Event',
         subject: activityForm.value.subject,
         event_category: selectedActivity.value,
         description: activityForm.value.description,
-
         starts_on: activityForm.value.date,
-       event_participants: [
-  {
-    reference_doctype: 'Opportunity',
-    reference_docname: opportunity.name,
-  }
-]
+        event_participants: [
+          {
+            reference_doctype: activityForm.value.createOpportunity
+              ? 'Opportunity'
+              : 'Customer',
+            reference_docname: activityForm.value.createOpportunity
+              ? opportunityName
+              : customer.doc.name,
+          }
+        ]
       },
-    })
+    });
 
     createToast({
       title: 'Activity Created',
       icon: 'check',
       variant: 'success',
-    })
-    showActivityModal.value = false
-    window.location.reload()
+    });
+    showActivityModal.value = false;
+    window.location.reload();
 
   } catch (error) {
     createToast({
@@ -841,7 +856,7 @@ async function createActivity() {
       icon: 'x',
       variant: 'error',
       message: error.message,
-    })
+    });
   }
 }
 

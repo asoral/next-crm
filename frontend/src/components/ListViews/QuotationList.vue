@@ -61,26 +61,78 @@
           </div>
         </div>
 
-        <!-- Card -->
-        <div
-          class="activity group flex max-h-64 cursor-pointer flex-col justify-between gap-2 rounded-md bg-surface-gray-1 px-4 py-3 hover:bg-surface-gray-2"
-          @click="goToQuotation(quotation.name)"
-        >
-          <div class="flex items-center justify-between">
-            <div class="truncate text-lg font-medium text-ink-gray-8">
-              {{ quotation.name }}
-            </div>
-            <div
-              class="text-xs rounded px-2 py-0.5"
-              :class="statusColorClass(quotation.status)"
-            >
-              {{ quotation.status }}
-            </div>
-          </div>
-          <div class="text-sm text-ink-gray-6">
-            {{ __('Amount') }}: ₹{{ quotation.grand_total.toLocaleString() }}
-          </div>
-        </div>
+<div
+class="activity group flex max-h-auto cursor-pointer flex-col justify-between gap-2 rounded-md bg-surface-gray-1 px-4 py-3 hover:bg-surface-gray-2"
+>
+<div class="flex items-center justify-between" @click="goToQuotation(quotation.name)">
+  <div class="truncate text-lg font-medium text-ink-gray-8">
+    {{ quotation.name }}
+  </div>
+  <div
+    class="text-xs rounded px-2 py-0.5"
+    :class="statusColorClass(quotation.status)"
+  >
+    {{ quotation.status }}
+  </div>
+</div>
+
+<div class="text-sm text-ink-gray-6">
+  {{ __('Amount') }}: ₹{{ quotation.grand_total.toLocaleString() }}
+</div>
+
+<!-- Toggle Button -->
+<div class="flex justify-end">
+  <button
+    class="flex items-center text-blue-600 text-sm mt-2"
+    @click.stop="toggleDetails(quotation.name)"
+  >
+    <FeatherIcon
+      :name="expandedQuotations.includes(quotation.name) ? 'chevron-up' : 'chevron-down'"
+      class="h-4 w-4 mr-1"
+    />
+    {{ expandedQuotations.includes(quotation.name) ? __('Hide Details') : __('View Details') }}
+  </button>
+</div>
+
+<div
+  v-if="expandedQuotations.includes(quotation.name)"
+  class="mt-3 p-3 border rounded bg-white shadow-sm"
+>
+  <table class="w-full text-sm border border-gray-200 rounded-lg shadow-sm">
+    <thead class="bg-gray-100">
+      <tr>
+        <th class="text-left py-1 px-2 font-medium text-gray-700">{{ __('Item Code') }}</th>
+        <th class="text-left py-1 px-2 font-medium text-gray-700">{{ __('Item Name') }}</th>
+        <th class="text-right py-1 px-2 font-medium text-gray-700">{{ __('Qty') }}</th>
+        <th class="text-right py-1 px-2 font-medium text-gray-700">{{ __('Rate') }}</th>
+        <th class="text-right py-1 px-2 font-medium text-gray-700">{{ __('Amount') }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr
+        v-for="(item, index) in quotation.items"
+        :key="item.item_code + index"
+        :class="index % 2 === 0 ? 'bg-white' : 'bg-white'"
+        class="hover:bg-blue-50 transition"
+      >
+        <td class="py-1 px-2 text-gray-800">{{ item.item_code }}</td>
+        <td class="py-1 px-2 text-gray-800">{{ item.item_name }}</td>
+        <td class="py-1 px-2 text-right text-gray-700">{{ item.qty }}</td>
+        <td class="py-1 px-2 text-right text-gray-700">₹{{ item.rate.toLocaleString() }}</td>
+        <td class="py-1 px-2 text-right text-gray-700">₹{{ item.amount.toLocaleString() }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="mt-3 text-sm text-ink-gray-7">
+    <strong>{{ __('Terms & Conditions:') }}</strong>
+    <p>{{ quotation.tc_name || __('No terms specified') }}</p>
+    <p>{{ quotation.terms }}</p>
+
+  </div>
+</div>
+</div>
+
       </div>
     </div>
   </div>
@@ -154,24 +206,12 @@ async function cancelQuotation(name) {
   }
 }
 async function fetchQuotations() {
-
-  const filters = []
-  if (props.opportunityId) {
-    filters.push(['opportunity', '=', props.opportunityId])
-  } 
-  if (props.leadId) {
-    filters.push(['party_name', '=', props.leadId])
-  }
-
-  // console.log('Quotation Filters:', filters)
-
-  const res = await call('frappe.client.get_list', {
-    doctype: 'Quotation',
-    fields: ['name', 'status', 'grand_total', 'creation', 'owner'],
-    filters,
-    order_by: 'creation desc',
+  const res = await call('/api/method/next_crm.api.api.get_quotations_with_items', {
+    opportunity: props.opportunityId || '',
+    lead: props.leadId || '',
   })
-  // console.log('All Quotations:', res)
+
+  console.log('Quotations with Items:', res)
 
   quotations.value = res || []
   props.count.value = quotations.value.length
@@ -185,15 +225,30 @@ watch(
   fetchQuotations
 )
 
-
-
 function goToNewQuotation() {
   const isOpportunity = Boolean(props.opportunityId)
-  const quotationTo = isOpportunity ? 'Opportunity' : 'Lead'
-  const partyName = isOpportunity ? props.opportunityId : props.leadId
+  const isLead = Boolean(props.leadId)
+  
+  if (isOpportunity) {
+    const url = `/app/quotation/new-quotation?quotation_to=Opportunity&opportunity=${encodeURIComponent(props.opportunityId)}&party_name=${encodeURIComponent(props.opportunityId)}`
+    window.location.href = url
+  } 
+  else if (isLead) {
+    const url = `/app/quotation/new-quotation?quotation_to=Lead&lead=${encodeURIComponent(props.leadId)}&party_name=${encodeURIComponent(props.leadId)}`
+    window.location.href = url
+  }
+}
 
-  const url = `/app/quotation/new?quotation_to=${quotationTo}&party_name=${partyName}`
-  window.location.href = url
+
+
+const expandedQuotations = ref([])
+
+function toggleDetails(name) {
+  if (expandedQuotations.value.includes(name)) {
+    expandedQuotations.value = expandedQuotations.value.filter(n => n !== name)
+  } else {
+    expandedQuotations.value.push(name)
+  }
 }
 
 

@@ -25,36 +25,61 @@ def get_all_events():
 
     return events
 
-@frappe.whitelist()
-def update_sidebar_item(webpage, icon):
-	filters = {
-		"web_page": webpage,
-		"parenttype": "LMS Settings",
-		"parentfield": "sidebar_items",
-		"parent": "LMS Settings",
-	}
-
-	if frappe.db.exists("LMS Sidebar Item", filters):
-		frappe.db.set_value("LMS Sidebar Item", filters, "icon", icon)
-	else:
-		doc = frappe.new_doc("LMS Sidebar Item")
-		doc.update(filters)
-		doc.icon = icon
-		doc.insert()
-
-
 
 @frappe.whitelist()
-def delete_sidebar_item(webpage):
-	return frappe.db.delete(
-		"LMS Sidebar Item",
-		{
-			"web_page": webpage,
-			"parenttype": "LMS Settings",
-			"parentfield": "sidebar_items",
-			"parent": "LMS Settings",
-		},
-	)
-@frappe.whitelist(allow_guest=True)
-def get_lms_setting(field):
-	return frappe.get_cached_value("LMS Settings", None, field)
+def get_quotations_with_items(opportunity=None, lead=None):
+    filters = {}
+    if opportunity:
+        filters["opportunity"] = opportunity
+    if lead:
+        filters["party_name"] = lead
+
+    quotations = frappe.get_all(
+        "Quotation",
+        fields=["*"],
+        filters=filters,
+        order_by="creation desc"
+    )
+
+    for quotation in quotations:
+        items = frappe.get_all(
+            "Quotation Item",
+            fields=["item_code", "item_name", "qty", "rate", "amount"],
+            filters={"parent": quotation.name},
+        )
+        quotation["items"] = items
+
+    return quotations
+# @frappe.whitelist()
+# def update_sidebar_item(webpage, icon):
+# 	filters = {
+# 		"web_page": webpage,
+# 		"parenttype": "LMS Settings",
+# 		"parentfield": "sidebar_items",
+# 		"parent": "LMS Settings",
+# 	}
+
+# 	if frappe.db.exists("LMS Sidebar Item", filters):
+# 		frappe.db.set_value("LMS Sidebar Item", filters, "icon", icon)
+# 	else:
+# 		doc = frappe.new_doc("LMS Sidebar Item")
+# 		doc.update(filters)
+# 		doc.icon = icon
+# 		doc.insert()
+
+
+
+# @frappe.whitelist()
+# def delete_sidebar_item(webpage):
+# 	return frappe.db.delete(
+# 		"LMS Sidebar Item",
+# 		{
+# 			"web_page": webpage,
+# 			"parenttype": "LMS Settings",
+# 			"parentfield": "sidebar_items",
+# 			"parent": "LMS Settings",
+# 		},
+# 	)
+# @frappe.whitelist(allow_guest=True)
+# def get_lms_setting(field):
+# 	return frappe.get_cached_value("LMS Settings", None, field)
