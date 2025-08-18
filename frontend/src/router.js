@@ -39,18 +39,21 @@ const routes = [
     component: () => import(`@/pages/${handleMobileView('Opportunity')}.vue`),
     props: true,
   },
+
   {
     alias: '/todos',
     path: '/todos/view/:viewType?',
     name: 'ToDos',
     component: () => import('@/pages/ToDos.vue'),
   },
+
   {
-  path: '/events',
+  alias: '/events',
+  path: '/events/view/:viewType?',
   name: 'Events',
   component: () => import('@/pages/Events.vue'),
-  meta: { title: 'Events' }
   },
+
   {
     alias: '/contacts',
     path: '/contacts/view/:viewType?',

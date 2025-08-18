@@ -99,15 +99,6 @@
   </Tooltip>
 </div>
 
-<!-- <div v-else-if="fieldName === 'description'">
-  <TextEditor
-    v-if="getRow(itemName, fieldName)?.label"
-    :content="String(getRow(itemName, fieldName).label)"
-    :editable="false"
-    editor-class="!prose-sm max-w-none focus:outline-none"
-    class="flex-1 overflow-hidden"
-  />
-</div> -->
 
 <div v-else>
   {{ getRow(itemName, fieldName)?.label }}
@@ -304,7 +295,7 @@ function parseRows(rows) {
         _rows[row] =
           typeof val === 'object' && val !== null
             ? val
-            : { label: val ?? '' };
+            : { label: (val ?? '').toString().replace(/<[^>]*>/g, '') };
       }
     });
 
@@ -356,7 +347,6 @@ async function showEvent(name) {
   }
 
 function createEvent(column) {
-
   selectedEvent.value = {
     name: '',
     subject: '',
@@ -369,6 +359,7 @@ function createEvent(column) {
     event_category: 'Event',
     reference_type: '',
     reference_docname: '',
+    event_participants: [],
   }
 
   if (column?.column?.name) {
