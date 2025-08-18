@@ -107,7 +107,6 @@
             class="form-control"
             :value="data[field.name] && getUser(data[field.name]).full_name"
             doctype="User"
-            :filters="field.filters"
             @change="(data) => emit('update', field.name, data)"
             :placeholder="'Select' + ' ' + field.label + '...'"
             :hideMe="true"
