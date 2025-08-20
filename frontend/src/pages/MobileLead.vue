@@ -336,8 +336,17 @@ const breadcrumbs = computed(() => {
     }
   }
 
+  let leadTitle = [
+    lead.data.company_name || '',
+    lead.data.first_name || '',
+    lead.data.last_name || ''
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .trim()
+
   items.push({
-    label: lead.data.title || lead.data.lead_name || __('Untitled'),
+    label: leadTitle || lead.data.lead_name || __('Untitled'),
     route: { name: 'Lead', params: { leadId: lead.data.name } },
   })
   return items

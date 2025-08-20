@@ -323,7 +323,6 @@ const props = defineProps({
 
 const customActions = ref([])
 const customStatuses = ref([])
-
 const opportunity = createResource({
   url: '/api/method/next_crm.api.opportunity.get_opportunity',
   params: { name: props.opportunityId },
@@ -334,6 +333,13 @@ const opportunity = createResource({
         params: { doctype: 'Customer', name: data.customer },
       })
       customer.fetch()
+    }
+
+    if (data.opportunity_from === "Lead" && data.party_name) {
+      lead.update({
+        params: { doctype: "Lead", name: data.party_name },
+      })
+      lead.fetch()
     }
 
     let obj = {
@@ -361,6 +367,10 @@ const opportunity = createResource({
 const customer = createResource({
   url: 'frappe.client.get',
   onSuccess: (data) => (opportunity.data._customersObj = data),
+})
+
+const lead = createResource({
+  url: 'frappe.client.get',
 })
 
 onMounted(() => {
@@ -439,10 +449,21 @@ const breadcrumbs = computed(() => {
     }
   }
 
+  let oppTitle = [
+    lead.data?.company_name || opportunity.data?.party_name || '',
+    lead.data?.first_name || opportunity.data?.first_name || '',
+    lead.data?.last_name || opportunity.data?.last_name || ''
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .trim()
+
   items.push({
-    label: opportunity.data?.title || customer.data?.name || opportunity.data?.party_name || __('Untitled'),
+    label: oppTitle || customer.data?.name || opportunity.data?.title || __('Untitled'),
     route: { name: 'Opportunity', params: { opportunityId: opportunity.data.name } },
   })
+
+
   return items
 })
 
