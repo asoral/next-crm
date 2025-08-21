@@ -227,12 +227,16 @@ class Lead(Lead):
         opportunity.insert()
 
         # Step 4: Re-link original ToDos from Lead to Opportunity (preserve status)
-        todos = frappe.get_all("ToDo", filters={"reference_type": "Lead", "reference_name": self.name})
+        # Step 4: Re-link original ToDos from Lead to Opportunity (preserve status)
+        todos = frappe.get_all("ToDo", filters={"reference_type": "Lead", "reference_name": self.name}, fields=["name", "status"])
         for todo in todos:
+            old_status = todo.status
             frappe.db.set_value("ToDo", todo.name, {
                 "reference_type": "Opportunity",
-                "reference_name": opportunity.name
+                "reference_name": opportunity.name,
+                "status": old_status  # explicitly preserve the original status
             })
+
 
         # Step 5: Handle contact, addresses, etc.
         link_contact_to_doc(contact, "Opportunity", opportunity.name)
