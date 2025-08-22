@@ -264,7 +264,6 @@ watch(
     }
 
     if (doc.doctype === 'Opportunity' && doc.opportunity_from === 'Lead' && doc.party_name) {
-      // --- Case 2: Opportunity linked to Lead ---
       try {
         const leadDoc = await call('frappe.client.get', {
           doctype: 'Lead',
@@ -281,6 +280,8 @@ watch(
         console.warn('Could not fetch linked Lead:', err)
       }
     }
+
+   
   },
   { immediate: true, deep: true }
 )

@@ -65,4 +65,5 @@ const options = computed(() => {
   groupByValue.value = list.value.data.group_by_field
   return groupByOptions.data.filter((option) => option !== groupByValue.value.value)
 })
+
 </script>

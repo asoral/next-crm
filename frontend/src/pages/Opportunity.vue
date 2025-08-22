@@ -72,9 +72,9 @@
         </Tooltip>
         <div class="flex flex-col gap-2.5 truncate text-ink-gray-9">
           <Tooltip
-            :text="customer.data?.name || opportunity.data?.title || opportunity.data?.party_name || __('Set an customer')">
+            :text="opportunity.data?.title  ||customer.data?.name || opportunity.data?.party_name || __('Set an customer')">
             <div class="truncate text-2xl font-medium" @click="showRenameModal = true">
-              {{ customer.data?.name || opportunity.data?.title || opportunity.data?.party_name || __('Untitled') }}
+              {{opportunity.data?.title ||  customer.data?.name  || opportunity.data?.party_name || __('Untitled') }}
             </div>
           </Tooltip>
           <div class="flex gap-1.5">
@@ -639,7 +639,7 @@ const breadcrumbs = computed(() => {
     .trim()
 
   items.push({
-    label: oppTitle || customer.data?.name || opportunity.data?.title || __('Untitled'),
+    label: oppTitle || opportunity.data?.title || customer.data?.name  || __('Untitled'),
     route: { name: 'Opportunity', params: { opportunityId: opportunity.data.name } },
   })
 

@@ -155,17 +155,16 @@ class OverrideOpportunity(Opportunity):
     def default_list_data():
         columns = [
             {
-                "label": "Opportunity From",
-                "type": "Dynamic Link",
-                "key": "party_name",
-                "options": "opportunity_from",
-                "width": "11rem",
+                "label": "Customer Name",
+                "type": "Data",
+                "key": "customer_name",
+                "width": "14rem",
             },
             {
-                "label": "Amount",
-                "type": "Currency",
-                "key": "opportunity_amount",
-                "width": "9rem",
+                "label": "First Name",
+                "type": "Data",
+                "key": "first_name",
+                "width": "12rem",
             },
             {
                 "label": "Status",
@@ -174,47 +173,58 @@ class OverrideOpportunity(Opportunity):
                 "width": "10rem",
             },
             {
-                "label": "Email",
-                "type": "Data",
-                "key": "contact_email",
+                "label": "Sales Stage",
+                "type": "Link",
+                "key": "sales_stage",
                 "width": "12rem",
             },
             {
-                "label": "Mobile No",
-                "type": "Data",
-                "key": "contact_mobile",
+                "label": "Probability",
+                "type": "Percent",
+                "key": "probability",
+                "width": "10rem",
+            },
+            {
+                "label": "Territory",
+                "type": "Link",
+                "key": "territory",
                 "width": "11rem",
             },
             {
-                "label": "Assigned To",
-                "type": "Text",
-                "key": "_assign",
-                "width": "10rem",
+                "label": "Owner",
+                "type": "Link",
+                "key": "opportunity_owner",
+                "width": "12rem",
             },
             {
                 "label": "Last Modified",
                 "type": "Datetime",
                 "key": "modified",
-                "width": "8rem",
+                "width": "10rem",
+            },
+            {
+                "label": "SLA",
+                "type": "Data",
+                "key": "sla_status",
+                "width": "10rem",
             },
         ]
+
         rows = [
             "name",
-            "customer",
-            "opportunity_amount",
+            "customer_name",
+            "first_name",
             "status",
-            "contact_email",
-            "currency",
-            "contact_mobile",
+            "sales_stage",
+            "probability",
+            "territory",
             "opportunity_owner",
             "sla_status",
-            "response_by",
-            "first_response_time",
-            "first_responded_on",
             "modified",
-            "_assign",
         ]
+
         return {"columns": columns, "rows": rows}
+
 
     @staticmethod
     def default_kanban_settings():

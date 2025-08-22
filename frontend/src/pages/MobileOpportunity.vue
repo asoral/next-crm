@@ -459,7 +459,7 @@ const breadcrumbs = computed(() => {
     .trim()
 
   items.push({
-    label: oppTitle || customer.data?.name || opportunity.data?.title || __('Untitled'),
+    label: oppTitle || opportunity.data?.title || customer.data?.name || __('Untitled'),
     route: { name: 'Opportunity', params: { opportunityId: opportunity.data.name } },
   })
 

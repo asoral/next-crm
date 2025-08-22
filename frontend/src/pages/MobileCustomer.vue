@@ -407,7 +407,7 @@ const breadcrumbs = computed(() => {
 
 usePageMeta(() => {
   return {
-    title: props.customerId,
+    title: customer.doc.customer_name || props.customerId,
   }
 })
 

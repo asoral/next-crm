@@ -514,6 +514,7 @@ const customer = createDocumentResource({
   fields: ['*'],
   auto: true,
 })
+// console.log("customer name", customer)
 
 async function updateField(fieldname, value) {
   await customer.setValue.submit({
@@ -550,7 +551,7 @@ const breadcrumbs = computed(() => {
   }
 
   items.push({
-  label: props.customerId,
+  label: customer.doc.customer_name ||  props.customerId,
   route: {
     name: 'Customer',
     params: { customerId: props.customerId },
