@@ -302,7 +302,8 @@ import {
   TabPanel,
   Breadcrumbs,
   call,
-  Tooltip
+  Tooltip,
+  usePageMeta
 } from 'frappe-ui'
 import { ref, computed, h, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -459,15 +460,24 @@ const breadcrumbs = computed(() => {
     .trim()
 
   items.push({
-    label: oppTitle || opportunity.data?.title || customer.data?.customer_name || __('Untitled'),
+    label:   opportunity.data?.title  || oppTitle || __('Untitled'),
     route: { name: 'Opportunity', params: { opportunityId: opportunity.data.name } },
   })
 
-
+console.log('items --', items)
   return items
 })
 
-
+usePageMeta(() => {
+  return {
+    title:
+      
+      
+      opportunity.data?.title ||
+      oppTitle.value 
+      
+  }
+})
 
 function redirectToLead() {
   const docType = opportunity.data.opportunity_from; 

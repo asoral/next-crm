@@ -479,7 +479,7 @@ const customer = createResource({
   url: 'frappe.client.get',
   onSuccess: (data) => (opportunity.data._customersObj = data),
 })
-
+console.log('suctomer', customer)
 const lead = createResource({
   url: 'frappe.client.get',
 })
@@ -639,16 +639,20 @@ const breadcrumbs = computed(() => {
     .trim()
 
   items.push({
-    label: oppTitle || opportunity.data?.title || customer.data?.customer_name  || __('Untitled'),
+    label:  opportunity.data?.title || oppTitle || __('Untitled'),
     route: { name: 'Opportunity', params: { opportunityId: opportunity.data.name } },
   })
-
+console.log('items', items)
   return items
 })
 
 usePageMeta(() => {
   return {
-    title: oppTitle || opportunity.data?.title  || opportunity.data?.party_name || opportunity.data?.name,
+    title:
+     
+     
+      opportunity.data?.title ||
+      oppTitle.value 
   }
 })
 
