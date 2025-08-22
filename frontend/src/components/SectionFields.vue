@@ -246,14 +246,12 @@ const _fields = computed(() => {
   return all_fields
 })
 
-// ✅ Watcher to set Title correctly
 watch(
   () => data.value,
   async (doc) => {
     if (!doc) return
 
     if (doc.doctype === 'Lead') {
-      // --- Case 1: Lead ---
       const org = doc.company_name || ''
       const first = doc.first_name || ''
       const last = doc.last_name || ''
@@ -280,7 +278,22 @@ watch(
         console.warn('Could not fetch linked Lead:', err)
       }
     }
-
+    if (doc.doctype === 'Opportunity' && doc.opportunity_from === 'Customer' && doc.party_name) {
+      try {
+        const leadDoc = await call('frappe.client.get', {
+          doctype: 'Customer',
+          name: doc.party_name,
+        })
+        const org = leadDoc.customer_name || ''
+      
+        const combined = [org].filter(Boolean).join(' ')
+        if (combined) {
+          doc.title = combined
+        }
+      } catch (err) {
+        console.warn('Could not fetch linked Lead:', err)
+      }
+    }
    
   },
   { immediate: true, deep: true }

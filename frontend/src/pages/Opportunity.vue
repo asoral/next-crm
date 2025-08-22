@@ -639,7 +639,7 @@ const breadcrumbs = computed(() => {
     .trim()
 
   items.push({
-    label: oppTitle || opportunity.data?.title || customer.data?.name  || __('Untitled'),
+    label: oppTitle || opportunity.data?.title || customer.data?.customer_name  || __('Untitled'),
     route: { name: 'Opportunity', params: { opportunityId: opportunity.data.name } },
   })
 
