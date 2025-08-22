@@ -648,7 +648,7 @@ const breadcrumbs = computed(() => {
 
 usePageMeta(() => {
   return {
-    title: opportunity.data?.title || customer.data?.name || opportunity.data?.party_name || opportunity.data?.name,
+    title: oppTitle || opportunity.data?.title  || opportunity.data?.party_name || opportunity.data?.name,
   }
 })
 
