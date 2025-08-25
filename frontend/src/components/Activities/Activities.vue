@@ -515,7 +515,7 @@ const activities = computed(() => {
 
   } else if (title.value == 'Emails') {
     if (!all_activities.data?.versions) return []
-    _activities = all_activities.data.versions.filter((activity) => activity.activity_type === 'communication')
+    _activities = all_activities.data.versions.filter((activity) => activity.activity_type === 'communication' &&  activity?.data?.reference_doctype !== 'Event')
   } else if (title.value == 'Comments') {
     if (!all_activities.data?.versions) return []
     _activities = all_activities.data.versions.filter((activity) => activity.activity_type === 'comment')
@@ -677,8 +677,15 @@ watch(
     const getActivityCount = (type) =>
       value?.versions?.filter((activity) => activity.activity_type === type).length || 0
 
+    const getEmailCount = (type) =>
+      value?.versions?.filter(
+        (activity) =>
+          activity.activity_type === type &&
+          activity.data?.reference_doctype !== 'Event'
+      ).length || 0;
+
     const tabCounts = {
-      Emails: getActivityCount('communication'),
+      Emails: getEmailCount('communication'),
       Comments: getActivityCount('comment'),
       ToDos: value?.todos?.length || 0,
       Events: value?.events?.length || 0,
