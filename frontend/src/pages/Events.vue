@@ -21,7 +21,7 @@
     v-model:updatedPageCount="updatedPageCount"
     doctype="Event"
     :options="{
-      allowedViews: ['list', 'kanban'],
+      allowedViews: ['list', 'kanban', 'group_by'],
     }"
   />
   <KanbanView
@@ -244,10 +244,62 @@ function getRow(name, field) {
 
 const rows = computed(() => {
   if (!events.value?.data?.data) return []
-  if (events.value.data.view_type === 'kanban') return getKanbanRows(events.value.data.data)
-  console.log("Computed Values data :",events.value.data.data)
+
+  const viewType = events.value.data.view_type
+  const groupByField = events.value?.data.group_by_field
+
+  if (viewType === 'group_by' && groupByField?.name) {
+    const groupedRows = getGroupedByRows(events.value.data.data, groupByField)
+
+    // Flatten grouped rows with headers
+    return groupedRows.flatMap((group) => {
+      const headerRow = {
+        isGroup: true,
+        groupLabel: `${groupByField.label} - ${group.group || __('Empty')}`,
+        groupKey: group.group,
+        collapsed: false,
+      }
+
+      const childRows = group.rows.map((row) => ({
+        ...row,
+        _group: group.group,
+      }))
+
+      return [headerRow, ...childRows]
+    })
+  }
+
+  if (viewType === 'kanban') {
+    return getKanbanRows(events.value.data.data)
+  }
+
   return parseRows(events.value?.data.data)
 })
+
+
+function getGroupedByRows(listRows, groupByField) {
+  let groupedRows = []
+
+  groupByField.options?.forEach((option) => {
+    let filteredRows = []
+
+    if (!option) {
+      filteredRows = listRows.filter((row) => !row[groupByField.name])
+    } else {
+      filteredRows = listRows.filter((row) => row[groupByField.name] == option)
+    }
+
+    let groupDetail = {
+      label: groupByField.label,
+      group: option || __(' '),
+      collapsed: false,
+      rows: parseRows(filteredRows),
+    }
+    groupedRows.push(groupDetail)
+  })
+
+  return groupedRows || listRows
+}
 
 function getKanbanRows(data) {
   let _rows = []

@@ -97,6 +97,7 @@ declare module 'vue' {
     ExportIcon: typeof import('./src/components/Icons/ExportIcon.vue')['default']
     ExternalLinkIcon: typeof import('./src/components/Icons/ExternalLinkIcon.vue')['default']
     FadedScrollableDiv: typeof import('./src/components/FadedScrollableDiv.vue')['default']
+    FeatherIcon: typeof import('./src/components/Icons/FeatherIcon.vue')['default']
     Fields: typeof import('./src/components/Fields.vue')['default']
     FileAudioIcon: typeof import('./src/components/Icons/FileAudioIcon.vue')['default']
     FileIcon: typeof import('./src/components/Icons/FileIcon.vue')['default']
