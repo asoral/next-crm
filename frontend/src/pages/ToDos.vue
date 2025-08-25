@@ -21,7 +21,7 @@
     v-model:updatedPageCount="updatedPageCount"
     doctype="ToDo"
     :options="{
-      allowedViews: ['list', 'kanban'],
+      allowedViews: ['list', 'kanban', 'group_by'],
     }"
   />
   <KanbanView
@@ -172,6 +172,7 @@
     @applyFilter="(data) => viewControls.applyFilter(data)"
     @applyLikeFilter="(data) => viewControls.applyLikeFilter(data)"
     @likeDoc="(data) => viewControls.likeDoc(data)"
+    
   />
   <div v-else-if="todos.data" class="flex h-full items-center justify-center">
     <div
@@ -227,23 +228,84 @@ const viewControls = ref(null)
 
 function getRow(name, field) {
   function getValue(value) {
-    if (value && typeof value === 'object') {
-      return value
-    }
+    if (value && typeof value === 'object') return value
     return { label: value }
   }
-  return getValue(rows.value?.find((row) => row.name == name)[field])
+
+  // flatten rows if view_type is group_by
+  let allRows = []
+
+  if (todos.value.data.view_type === 'group_by') {
+    todos.value.data.data.forEach((group) => {
+      if (group.rows) allRows.push(...group.rows)
+    })
+  } else {
+    allRows = rows.value
+  }
+
+  const row = allRows.find((r) => r.name == name)
+  return row ? getValue(row[field]) : { label: '' }
 }
 
 const rows = computed(() => {
   if (!todos.value?.data?.data) return []
 
-  if (todos.value.data.view_type === 'kanban') {
+  const viewType = todos.value.data.view_type
+  const groupByField = todos.value?.data.group_by_field
+
+  if (viewType === 'group_by' && groupByField?.name) {
+    const groupedRows = getGroupedByRows(todos.value.data.data, groupByField)
+
+    // Flatten grouped rows with headers
+    return groupedRows.flatMap((group) => {
+      const headerRow = {
+        isGroup: true,
+        groupLabel: `${groupByField.label} - ${group.group || __('Empty')}`,
+        groupKey: group.group,
+        collapsed: false,
+      }
+
+      const childRows = group.rows.map((row) => ({
+        ...row,
+        _group: group.group,
+      }))
+
+      return [headerRow, ...childRows]
+    })
+  }
+
+  if (viewType === 'kanban') {
     return getKanbanRows(todos.value.data.data)
   }
 
   return parseRows(todos.value?.data.data)
 })
+
+
+
+function getGroupedByRows(listRows, groupByField) {
+  let groupedRows = []
+
+  groupByField.options?.forEach((option) => {
+    let filteredRows = []
+
+    if (!option) {
+      filteredRows = listRows.filter((row) => !row[groupByField.name])
+    } else {
+      filteredRows = listRows.filter((row) => row[groupByField.name] == option)
+    }
+
+    let groupDetail = {
+      label: groupByField.label,
+      group: option || __(' '),
+      collapsed: false,
+      rows: parseRows(filteredRows),
+    }
+    groupedRows.push(groupDetail)
+  })
+
+  return groupedRows || listRows
+}
 
 function getKanbanRows(data) {
   let _rows = []

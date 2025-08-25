@@ -157,6 +157,7 @@ def get_opportunity_activities(name):
                 "attachments": get_attachments("Communication", communication.name),
                 "read_by_recipient": communication.read_by_recipient,
                 "delivery_status": communication.delivery_status,
+                "reference_doctype": communication.reference_doctype
             },
             "is_lead": False,
         }
@@ -335,6 +336,7 @@ def get_lead_activities(name, get_events=True):
                 "attachments": get_attachments("Communication", communication.name),
                 "read_by_recipient": communication.read_by_recipient,
                 "delivery_status": communication.delivery_status,
+                "reference_doctype": communication.reference_doctype
             },
             "is_lead": True,
         }
