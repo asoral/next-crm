@@ -348,29 +348,66 @@ async function render() {
 
     referenceTitle.value = ''
 
-if (editMode.value && _todo.value.reference_type && _todo.value.reference_name) {
-  try {
-    const res = await call('frappe.client.get', {
-      doctype: _todo.value.reference_type,
-      name: _todo.value.reference_name,
-    })
-    const doc = res
-// console.log('doc', res)
-    const refType = (_todo.value.reference_type || '').toLowerCase()
+    if (editMode.value && _todo.value.reference_type && _todo.value.reference_name) {
+      try {
+        const res = await call('frappe.client.get', {
+          doctype: _todo.value.reference_type,
+          name: _todo.value.reference_name,
+        })
+        const doc = res
+        const refType = (_todo.value.reference_type || '').toLowerCase()
 
-    if (refType === 'Lead' || refType === 'Opportunity') {
-      referenceTitle.value = doc.title || doc.name
-    } else {
-      referenceTitle.value = doc.title || doc.name
-    }
-  } catch (err) {
-    console.warn('Error fetching reference title:', err)
-    referenceTitle.value = _todo.value.reference_name
-  }
+        if (refType === 'lead') {
+          let customTitle = [
+            doc.company_name || '',
+            doc.first_name || '',
+            doc.last_name || ''
+          ]
+            .filter(Boolean)
+            .join(' ')
+            .trim()
 
+          referenceTitle.value = customTitle || doc.title || doc.name
+        } 
+        
+        else if (refType === 'opportunity') {
+          if (doc.opportunity_from === 'Lead' && doc.party_name) {
+            try {
+              const leadDoc = await call('frappe.client.get', {
+                doctype: 'Lead',
+                name: doc.party_name,
+              })
+              let customTitle = [
+                leadDoc.company_name || '',
+                leadDoc.first_name || '',
+                leadDoc.last_name || ''
+              ]
+                .filter(Boolean)
+                .join(' ')
+                .trim()
+
+              referenceTitle.value = customTitle || doc.title || doc.name
+              console.log("reference_title", referenceTitle.value)
+            } catch (leadErr) {
+              console.warn('Error fetching linked lead:', leadErr)
+              referenceTitle.value = doc.title || doc.name
+            }
+          } else {
+            referenceTitle.value = doc.title || doc.name
+          }
+        } 
+        
+        else {
+          referenceTitle.value = doc.title || doc.name
+        }
+      } catch (err) {
+        console.warn('Error fetching reference title:', err)
+        referenceTitle.value = _todo.value.reference_name
+      }
     }
   })
 }
+
 
 
 

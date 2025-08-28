@@ -211,8 +211,8 @@ import EditIcon from '@/components/Icons/EditIcon.vue'
 import Link from '@/components/Controls/Link.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
 import { usersStore } from '@/stores/users'
-import { Tooltip } from 'frappe-ui'
-import { computed } from 'vue'
+import { Tooltip, call } from 'frappe-ui'
+import { computed, watch, onMounted } from 'vue'
 import TableMultiselectInput from '@/components/Controls/TableMultiselectInput.vue'
 import CurrencyInput from './Controls/CurrencyInput.vue'
 
@@ -231,24 +231,11 @@ const { getUser } = usersStore()
 const emit = defineEmits(['update'])
 
 const data = defineModel()
-
 const _fields = computed(() => {
   let all_fields = []
   props.fields?.forEach((field) => {
     let df = field?.all_properties
     if (df?.depends_on) evaluate_depends_on(df.depends_on, field)
-
-    if (field.label === 'Title') {
-      const org = data.value?.company_name || ''
-      console.log('org', org)
-      const first = data.value?.first_name || ''
-      const last = data.value?.last_name || ''
-      const combined = [org, first, last].filter(Boolean).join(' ')
-      if (combined) {
-        data.value[field.name] = combined
-      }
-    }
-
 
     all_fields.push({
       ...field,
@@ -258,6 +245,59 @@ const _fields = computed(() => {
   })
   return all_fields
 })
+
+watch(
+  () => data.value,
+  async (doc) => {
+    if (!doc) return
+
+    if (doc.doctype === 'Lead') {
+      const org = doc.company_name || ''
+      const first = doc.first_name || ''
+      const last = doc.last_name || ''
+      const combined = [org, first, last].filter(Boolean).join(' ')
+      if (combined) {
+        doc.title = combined
+      }
+    }
+
+    if (doc.doctype === 'Opportunity' && doc.opportunity_from === 'Lead' && doc.party_name) {
+      try {
+        const leadDoc = await call('frappe.client.get', {
+          doctype: 'Lead',
+          name: doc.party_name,
+        })
+        const org = leadDoc.company_name || ''
+        const first = leadDoc.first_name || ''
+        const last = leadDoc.last_name || ''
+        const combined = [org, first, last].filter(Boolean).join(' ')
+        if (combined) {
+          doc.title = combined
+        }
+      } catch (err) {
+        console.warn('Could not fetch linked Lead:', err)
+      }
+    }
+    if (doc.doctype === 'Opportunity' && doc.opportunity_from === 'Customer' && doc.party_name) {
+      try {
+        const leadDoc = await call('frappe.client.get', {
+          doctype: 'Customer',
+          name: doc.party_name,
+        })
+        const org = leadDoc.customer_name || ''
+      
+        const combined = [org].filter(Boolean).join(' ')
+        if (combined) {
+          doc.title = combined
+        }
+      } catch (err) {
+        console.warn('Could not fetch linked Lead:', err)
+      }
+    }
+   
+  },
+  { immediate: true, deep: true }
+)
 
 
 function evaluate_depends_on(expression, field) {

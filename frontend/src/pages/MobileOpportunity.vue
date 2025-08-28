@@ -302,7 +302,8 @@ import {
   TabPanel,
   Breadcrumbs,
   call,
-  Tooltip
+  Tooltip,
+  usePageMeta
 } from 'frappe-ui'
 import { ref, computed, h, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -323,7 +324,6 @@ const props = defineProps({
 
 const customActions = ref([])
 const customStatuses = ref([])
-
 const opportunity = createResource({
   url: '/api/method/next_crm.api.opportunity.get_opportunity',
   params: { name: props.opportunityId },
@@ -334,6 +334,13 @@ const opportunity = createResource({
         params: { doctype: 'Customer', name: data.customer },
       })
       customer.fetch()
+    }
+
+    if (data.opportunity_from === "Lead" && data.party_name) {
+      lead.update({
+        params: { doctype: "Lead", name: data.party_name },
+      })
+      lead.fetch()
     }
 
     let obj = {
@@ -361,6 +368,10 @@ const opportunity = createResource({
 const customer = createResource({
   url: 'frappe.client.get',
   onSuccess: (data) => (opportunity.data._customersObj = data),
+})
+
+const lead = createResource({
+  url: 'frappe.client.get',
 })
 
 onMounted(() => {
@@ -439,14 +450,34 @@ const breadcrumbs = computed(() => {
     }
   }
 
+  let oppTitle = [
+    lead.data?.company_name || opportunity.data?.party_name || '',
+    lead.data?.first_name || opportunity.data?.first_name || '',
+    lead.data?.last_name || opportunity.data?.last_name || ''
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .trim()
+
   items.push({
-    label: opportunity.data?.title || customer.data?.name || opportunity.data?.party_name || __('Untitled'),
+    label:   opportunity.data?.title  || oppTitle || __('Untitled'),
     route: { name: 'Opportunity', params: { opportunityId: opportunity.data.name } },
   })
+
+console.log('items --', items)
   return items
 })
 
-
+usePageMeta(() => {
+  return {
+    title:
+      
+      
+      opportunity.data?.title ||
+      oppTitle.value 
+      
+  }
+})
 
 function redirectToLead() {
   const docType = opportunity.data.opportunity_from; 
@@ -694,7 +725,151 @@ const opportunityContacts = createResource({
   },
 })
 
-function updateField(name, value, callback) {
+
+const opportunityAddresses = createResource({
+  url: '/api/method/next_crm.api.address.get_linked_address',
+  params: { link_doctype: "Opportunity", link_name: props.opportunityId },
+  cache: ['opportunity_addresses', props.opportunityId],
+  auto: true,
+  transform: (data) => {
+    data.forEach((address) => {
+      address.opened = false
+    })
+    return data
+  },
+})
+
+
+const createCustomerFromOpportunity = async () => {
+  try {
+    const opp = opportunity.data
+    if (!opp || !opp.party_name) {
+      createToast({
+        title: __('Customer creation failed'),
+        text: __('Party Name is missing in Opportunity'),
+        icon: 'x',
+        iconClasses: 'text-ink-red-4',
+      })
+      return
+    }
+
+    const unwrap = (res) => (res?.message || res?.data || res)
+
+    const createdRes = await call("frappe.client.insert", {
+      doc: {
+        doctype: "Customer",
+        customer_name: opp.title || opp.party_name || opp.name,
+        customer_type: "Company",
+        customer_group: "All Customer Groups",
+        territory: opp.territory || "India",
+        opportunity_name: opp.name,
+        lead_name: opp.party_name,
+      }
+    })
+
+    const createdCustomer = unwrap(createdRes)
+    const customerName = createdCustomer.name
+    const customerLabel = createdCustomer.customer_name || customerName
+
+    if (!customerName) {
+      throw new Error("Customer created but response missing name")
+    }
+
+    await call("frappe.client.set_value", {
+      doctype: "Opportunity",
+      name: props.opportunityId,
+      fieldname: "customer",
+      value: customerName,
+    })
+
+  
+    const contacts = opportunityContacts.data || []
+    for (const c of contacts) {
+      const contactName = c?.name
+      if (!contactName) continue
+
+      const contactRes = await call("frappe.client.get", {
+        doctype: "Contact",
+        name: contactName,
+      })
+      const contactDoc = unwrap(contactRes)
+
+      const hasCustomerLink = (contactDoc.links || []).some(
+        (l) => l.link_doctype === "Customer" && l.link_name === customerName
+      )
+
+      if (!hasCustomerLink) {
+        await call("frappe.client.insert", {
+          doc: {
+            doctype: "Dynamic Link",
+            parenttype: "Contact",
+            parent: contactName,
+            parentfield: "links",
+            link_doctype: "Customer",
+            link_name: customerName,
+          }
+        })
+      }
+    }
+
+    const addresses = opportunityAddresses.data || []
+    for (const a of addresses) {
+      const addressName = a?.name
+      if (!addressName) continue
+
+      const addrRes = await call("frappe.client.get", {
+        doctype: "Address",
+        name: addressName,
+      })
+      const addrDoc = unwrap(addrRes)
+
+      const hasCustomerLink = (addrDoc.links || []).some(
+        (l) => l.link_doctype === "Customer" && l.link_name === customerName
+      )
+
+      if (!hasCustomerLink) {
+        await call("frappe.client.insert", {
+          doc: {
+            doctype: "Dynamic Link",
+            parenttype: "Address",
+            parent: addressName,
+            parentfield: "links",
+            link_doctype: "Customer",
+            link_name: customerName,
+          }
+        })
+      }
+    }
+
+    try {
+      opportunity.reload && opportunity.reload()
+      opportunityContacts.reload && opportunityContacts.reload()
+      opportunityAddresses.reload && opportunityAddresses.reload()
+      customer && customer.fetch && customer.fetch()
+    } catch (e) {
+      console.warn("reload failed", e)
+    }
+
+    createToast({
+      title: __('Customer created successfully'),
+      text: __(`Linked customer ${customerLabel} to Opportunity, Contact(s) & Address(es)`),
+      icon: 'check',
+      iconClasses: 'text-ink-green-3',
+    })
+  } catch (err) {
+    console.error(err)
+    createToast({
+      title: __('Error creating customer'),
+      text: __(err?.messages?.[0] || err?.message || 'Something went wrong'),
+      icon: 'x',
+      iconClasses: 'text-ink-red-4',
+    })
+  }
+}
+
+
+
+async function updateField(name, value, callback) {
   const isStatusField = name === "status";
 
 if (isStatusField && opportunity.data[name] === value && value != "Won") {
@@ -707,6 +882,11 @@ if (isStatusField && opportunity.data[name] === value && value != "Won") {
     opportunity.data[name] = value
     callback?.()
   })
+  if (isStatusField && value === "Won") {
+  await createCustomerFromOpportunity()
+  showCreateProjectModal.value = true
+}
+
 }
 
 async function deleteOpportunity(name) {

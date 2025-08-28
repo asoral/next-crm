@@ -127,7 +127,7 @@ class="activity group flex max-h-auto cursor-pointer flex-col justify-between ga
   <div class="mt-3 text-sm text-ink-gray-7">
     <strong>{{ __('Terms & Conditions:') }}</strong>
     <p>{{ quotation.tc_name || __('No terms specified') }}</p>
-    <p>{{ quotation.terms }}</p>
+    <p>{{ stripHtml(quotation.terms) }}</p>
 
   </div>
 </div>
@@ -249,6 +249,12 @@ function toggleDetails(name) {
   } else {
     expandedQuotations.value.push(name)
   }
+}
+
+function stripHtml(html) {
+  const tempDiv = document.createElement('div')
+  tempDiv.innerHTML = html || ''
+  return tempDiv.textContent || tempDiv.innerText || ''
 }
 
 
