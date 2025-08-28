@@ -326,6 +326,8 @@ async function updateEvent() {
         iconClasses: 'text-ink-green-3',
       })
     }
+    // This is event model
+    
     if (_event.value.status === 'Closed' || _event.value.status === 'Completed' && createAnother.value) {
   nextTick(() => {
     editMode.value = false
