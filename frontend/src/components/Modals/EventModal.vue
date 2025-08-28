@@ -13,10 +13,29 @@
     }"
   >
     <template #body-title>
-      <div class="flex items-center gap-3">
-        <h3 class="text-2xl font-semibold leading-6 text-ink-gray-9">
-          {{ editMode ? __('Edit Event') : __('Create Event') }}
-        </h3>
+      <div class="flex flex-col gap-1">
+        <div class="flex items-center gap-3">
+          <h3 class="text-2xl font-semibold leading-6 text-ink-gray-9">
+            {{ editMode ? __('Edit Event') : __('Create Event') }}
+          </h3>
+          <Button
+      v-if="referenceParticipant"
+      size="sm"
+      :label="referenceParticipant.reference_doctype === 'Opportunity' ? 'Open Opportunity' : 'Open Lead'"
+      @click="redirect"
+    >
+      <template #suffix>
+        <ArrowUpRightIcon class="h-4 w-4" />
+      </template>
+    </Button>
+        </div>
+        <div
+          v-if="referenceTitle"
+          class="text-base leading-6 text-ink-gray-9 mt-1"
+          :title="referenceTitle"
+        >
+          {{ referenceTitle }}
+        </div>
       </div>
     </template>
     <template #body-content>
@@ -52,28 +71,6 @@
               </template>
             </Button>
           </Dropdown>
-          <!-- <Link
-            class="form-control"
-            :value="getUser(_event._assign).full_name"
-            doctype="User"
-            @change="(option) => (_event._assign = option)"
-            :placeholder="__('John Doe')"
-            :hideMe="true"
-          >
-            <template #prefix>
-              <UserAvatar class="mr-2 !h-4 !w-4" :user="_event.allocated_to" />
-            </template>
-            <template #item-prefix="{ option }">
-              <UserAvatar class="mr-2" :user="option.value" size="sm" />
-            </template>
-            <template #item-label="{ option }">
-              <Tooltip :text="option.value">
-                <div class="cursor-pointer">
-                  {{ getUser(option.value).full_name }}
-                </div>
-              </Tooltip>
-            </template>
-          </Link> -->
           <FormControl
             v-model="_event.event_type"
             type="select"
@@ -133,19 +130,19 @@
           </Link>
         </div>
         <!-- Only show when editing an existing event -->
-<div v-if="editMode" class="flex items-center gap-2">
-  <FormControl
-    class="form-control"
-    type="checkbox"
-    v-model="createAnother"
-  />
-  <label
-    class="text-sm text-ink-gray-5"
-    @click="createAnother = !createAnother"
-  >
-    {{ __('Create New Event') }}
-  </label>
-</div>
+        <div v-if="editMode" class="flex items-center gap-2">
+          <FormControl
+            class="form-control"
+            type="checkbox"
+            v-model="createAnother"
+          />
+          <label
+            class="text-sm text-ink-gray-5"
+            @click="createAnother = !createAnother"
+          >
+            {{ __('Create New Event') }}
+          </label>
+        </div>
 
         <div class="flex flex-wrap items-center gap-2 w-full" v-if="_event.sync_with_google_calendar">
           <!-- Multi input to enter email addresses for event participants. -->
@@ -167,6 +164,7 @@
 
 <script setup>
 import EventStatusIcon from '@/components/Icons/EventStatusIcon.vue'
+import ArrowUpRightIcon from '@/components/Icons/ArrowUpRightIcon.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
 import Link from '@/components/Controls/Link.vue'
 import MultiValueInput from '../Controls/MultiValueInput.vue'
@@ -175,7 +173,8 @@ import { usersStore } from '@/stores/users'
 import { capture } from '@/telemetry'
 import { TextEditor, Dropdown, FormControl, Tooltip, call, TextInput, createResource } from 'frappe-ui'
 import { ref, watch, nextTick, onMounted } from 'vue'
-
+import { useRouter } from 'vue-router'
+import { computed } from 'vue'
 function validate(value) {
   return /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(value)
 }
@@ -202,12 +201,13 @@ const events = defineModel('reloadEvents')
 
 const emit = defineEmits(['updateEvent', 'after'])
 
+const router = useRouter()
 const { getUser } = usersStore()
 
 const title = ref(null)
 const editMode = ref(false)
 const _event = ref({
-  title: '',
+  subject: '',
   description: '',
   _assign: '',
   starts_on: '',
@@ -357,6 +357,31 @@ async function updateEvent() {
   }
 }
 
+const referenceParticipant = computed(() => {
+  if (!props.event?.event_participants) return null
+  return props.event.event_participants.find(p =>
+    p.reference_doctype === 'Lead' || p.reference_doctype === 'Opportunity'
+  )
+})
+const referenceTitle = computed(() => {
+  if (!referenceParticipant.value) return ''
+  return referenceParticipant.value.reference_docname || ''
+})
+function redirect() {
+  const participant = referenceParticipant.value
+  if (!participant) return
+
+  const name = participant.reference_doctype
+  const docname = participant.reference_docname
+
+  const params =
+    name === 'Opportunity'
+      ? { opportunityId: docname }
+      : { leadId: docname }
+
+  router.push({ name, params })
+}
+
 function render() {
   editMode.value = false
   nextTick(() => {
@@ -368,6 +393,8 @@ function render() {
       event_participants.value = (_event.value.event_participants || [])
         .filter((participant) => participant.reference_doctype === 'User' && participant.reference_docname === 'Guest')
         .map((participant) => participant.email)
+      
+      fetchReferenceTitle()
     } else {
       event_participants.value = [getUser().email]
     }
