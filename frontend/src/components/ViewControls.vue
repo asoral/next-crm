@@ -5,6 +5,7 @@
         <div class="flex gap-2">
           <Filter v-model="list" :doctype="doctype" :default_filters="filters" @update="updateFilter" />
           <input
+          v-if="doctype === 'Customer'"
           v-model="customerSearch"
           type="text"
           placeholder="Search Customer"
