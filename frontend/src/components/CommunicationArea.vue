@@ -226,6 +226,10 @@ async function sendMail() {
   let cc = newEmailEditor.value.ccEmails || []
   let bcc = newEmailEditor.value.bccEmails || []
 
+  if (doc.value?.data?.lead_owner && !cc.includes(doc.value.data.lead_owner)) {
+    cc.push(doc.value.data.lead_owner)
+  }
+
   if (attachments.value.length) {
     capture('email_attachments_added')
   }
@@ -254,6 +258,7 @@ async function sendMail() {
   }
   return true
 }
+
 
 async function sendComment() {
   let comment = await call('frappe.desk.form.utils.add_comment', {

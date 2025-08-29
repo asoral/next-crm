@@ -4,6 +4,12 @@
       <div class="flex items-center justify-between gap-2 overflow-x-auto">
         <div class="flex gap-2">
           <Filter v-model="list" :doctype="doctype" :default_filters="filters" @update="updateFilter" />
+          <input
+          v-model="customerSearch"
+          type="text"
+          placeholder="Search Customer"
+          class="border rounded px-2 py-1 text-sm w-[150px]"
+        />
           <GroupBy v-if="route.params.viewType === 'group_by'" v-model="list" :doctype="doctype"
             :hideLabel="isMobileView" @update="updateGroupBy" />
         </div>
@@ -1224,7 +1230,6 @@ defineExpose({
   currentView,
 })
 
-// Watchers
 watch(
   () => getView(route.query.view, route.params.viewType, props.doctype),
   (value, old_value) => {
@@ -1238,4 +1243,23 @@ watch([() => route, () => route.params.viewType], (value, old_value) => {
   if (value[0] === old_value[0] && value[1] === value[0]) return
   reload()
 })
+
+const customerSearch = ref('')
+
+const applyCustomerSearch = useDebounceFn((val) => {
+  let filters = { ...list.value.params.filters }
+
+  if (val && val.trim() !== '') {
+    filters['customer_name'] = ['like', `%${val}%`]
+  } else {
+    delete filters['customer_name']
+  }
+
+  updateFilter(filters)
+}, 400)
+
+watch(customerSearch, (val) => {
+  applyCustomerSearch(val)
+})
+
 </script>
