@@ -407,7 +407,7 @@ function createEvent(column) {
     starts_on: '',
     ends_on: '',
     status: 'Open',
-    event_type: 'Private',
+    event_type: 'Public',
     event_category: 'Event',
     reference_type: '',
     reference_docname: '',

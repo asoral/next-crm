@@ -63,12 +63,12 @@
             class="flex flex-1 flex-col justify-between overflow-hidden"
           >
             <div class="flex flex-col overflow-y-auto">
-              <div
-                v-for="(section, i) in fieldsLayout.data"
-                :key="section.label"
-                class="flex flex-col px-2 py-3 sm:p-3"
-                :class="{ 'border-b': i !== fieldsLayout.data.length - 1 }"
-              >
+              <template v-for="(section, i) in fieldsLayout.data" :key="section.label">
+                <div
+                  v-if="!['Addresses', 'Contacts'].includes(section.label)"
+                  class="flex flex-col p-3"
+                  :class="{ 'border-b': i !== fieldsLayout.data.length - 1 }"
+                >
                 <Section :is-opened="section.opened" :label="section.label">
                   <SectionFields
                     :fields="section.fields"
@@ -78,6 +78,7 @@
                   />
                 </Section>
               </div>
+              </template>
             </div>
           </div>
         </div>

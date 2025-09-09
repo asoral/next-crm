@@ -20,7 +20,6 @@
             </div>
           </Tooltip>
         </div>
-        <!-- Action Buttons -->
         <div class="mt-2 flex justify-end gap-2">
           <Dropdown :options="eventStatusOptions((status) => handleStatusChange(status, event))" @click.stop>
             <Tooltip :text="__('Change Status')">
@@ -108,7 +107,7 @@ import LockIcon from '@/components/Icons/LockIcon.vue'
 import GlobeIcon from '@/components/Icons/GlobeIcon.vue'
 import DotIcon from '@/components/Icons/DotIcon.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
-import { Tooltip, Dropdown, Button } from 'frappe-ui'
+import { Tooltip, Dropdown, Button, call } from 'frappe-ui'
 import { dateFormat, timeAgo, dateTooltipFormat, eventStatusOptions } from '@/utils'
 import { usersStore } from '@/stores/users'
 import { globalStore } from '@/stores/global'
@@ -123,29 +122,53 @@ const { getUser } = usersStore()
 const { $dialog } = globalStore()
 
 
-
 async function handleStatusChange(status, event) {
   props.modalRef.updateEventStatus(status, event)
 
-  if (status === 'Completed') {
-    try {
-      const res = await fetch(`/api/resource/Event/${event.name}`)
-      const fullEvent = await res.json()
+  let refType, refName
 
+  try {
+    const ev = await call('frappe.client.get', {
+      doctype: 'Event',
+      name: event.name,
+    }).then(r => r?.data || r)
+
+    const ref = ev?.event_participants?.find(
+      p => p.reference_doctype && p.reference_docname
+    )
+    if (ref) {
+      refType = ref.reference_doctype
+      refName = ref.reference_docname
+    }
+
+    if (refType && refName) {
+      await call('frappe.client.set_value', {
+        doctype: refType,
+        name: refName,
+        fieldname: {
+          last_modified: new Date().toISOString(),
+        },
+      })
+    } else {
+      console.warn('No reference found for Event', ev.name)
+    }
+
+    if (status === 'Completed') {
       props.modalRef.showEvent({
         subject: '',
         description: '',
-        allocated_to: fullEvent.data.allocated_to,
+        allocated_to: ev.allocated_to,
         starts_on: '',
         ends_on: '',
         status: 'Open',
-        event_type: fullEvent.data.event_type || 'Private',
+        event_type: ev.event_type || 'Private',
       })
-    } catch (err) {
-      console.error('Failed to fetch full Event:', err)
     }
+  } catch (err) {
+    console.error('Failed in handleStatusChange:', err)
   }
 }
+
 
 function stripHtml(html) {
   const div = document.createElement('div')

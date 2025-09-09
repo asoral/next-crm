@@ -1,7 +1,26 @@
 <template>
   <NestedPopover>
     <template #target>
-      <div class="flex items-center">
+      <div v-if="isMobileView" class="flex items-center">
+        <Button   :class="filters?.size ? 'rounded-r-none' : ''">
+
+          <template #prefix><FilterIcon class="h-4" /></template>
+          <template v-if="filters?.size" #suffix>
+            <div
+              class="flex h-5 w-5 items-center justify-center rounded-[5px] bg-surface-white pt-px text-xs font-medium text-ink-gray-8 shadow-sm"
+            >
+              {{ filters.size }}
+            </div>
+          </template>
+        </Button>
+        <Tooltip v-if="filters?.size" :text="__('Clear all Filter')">
+          <div>
+            <Button class="rounded-l-none border-l" icon="x" @click.stop="clearfilter(false)" />
+          </div>
+        </Tooltip>
+      </div>
+
+      <div v-else class="flex items-center">
         <Button :label="__('Filter')" :class="filters?.size ? 'rounded-r-none' : ''">
           <template #prefix><FilterIcon class="h-4" /></template>
           <template v-if="filters?.size" #suffix>

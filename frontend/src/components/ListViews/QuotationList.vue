@@ -12,7 +12,7 @@
       </Button>
     </div>
   
-<div v-if="quotations.length === 0" class="flex flex-1 min-h-[40vh] items-center justify-center">
+<div v-if="!loading && quotations.length === 0" class="flex flex-1 min-h-[40vh] items-center justify-center">
 <div class="flex flex-col items-center justify-center gap-3 text-xl font-medium text-ink-gray-4">
   <FeatherIcon name="file-text" class="h-10 w-10" />
   <span>{{ __('No Quotations') }}</span>
@@ -77,7 +77,8 @@ class="activity group flex max-h-auto cursor-pointer flex-col justify-between ga
 </div>
 
 <div class="text-sm text-ink-gray-6">
-  {{ __('Amount') }}: ₹{{ quotation.grand_total.toLocaleString() }}
+  {{ __('Amount') }}:
+  {{ quotation.symbol || quotation.currency }}  {{ quotation.grand_total.toLocaleString() }}
 </div>
 
 <!-- Toggle Button -->
@@ -118,8 +119,8 @@ class="activity group flex max-h-auto cursor-pointer flex-col justify-between ga
         <td class="py-1 px-2 text-gray-800">{{ item.item_code }}</td>
         <td class="py-1 px-2 text-gray-800">{{ item.item_name }}</td>
         <td class="py-1 px-2 text-right text-gray-700">{{ item.qty }}</td>
-        <td class="py-1 px-2 text-right text-gray-700">₹{{ item.rate.toLocaleString() }}</td>
-        <td class="py-1 px-2 text-right text-gray-700">₹{{ item.amount.toLocaleString() }}</td>
+          <td class="py-1 px-2 text-right text-gray-700">{{ quotation.symbol || quotation.currency }}  {{ item.rate.toLocaleString() }}</td>
+                <td class="py-1 px-2 text-right text-gray-700">{{ quotation.symbol || quotation.currency }}  {{ item.amount.toLocaleString() }}</td>
       </tr>
     </tbody>
   </table>
@@ -164,6 +165,7 @@ const props = defineProps({
 const quotations = ref([])
 const loading = ref(true)
 const { getUser } = usersStore()
+const currencySymbols = ref({})
 
 function statusColorClass(status) {
   switch (status) {
@@ -216,6 +218,9 @@ async function fetchQuotations() {
   quotations.value = res || []
   props.count.value = quotations.value.length
   loading.value = false
+  for (const q of quotations.value) {
+    q.symbol = await getCurrencySymbol(q.currency)
+  }
 }
 
 
@@ -224,6 +229,24 @@ watch(
   () => [props.opportunityId, props.leadId],
   fetchQuotations
 )
+
+
+async function getCurrencySymbol(currency) {
+  if (currencySymbols.value[currency]) return currencySymbols.value[currency]
+
+  try {
+    const res = await call('frappe.client.get', {
+      doctype: 'Currency',
+      name: currency
+    })
+    currencySymbols.value[currency] = res.symbol || currency
+    return currencySymbols.value[currency]
+  } catch (err) {
+    console.error('Currency fetch error:', err)
+    return currency 
+  }
+}
+
 
 function goToNewQuotation() {
   const isOpportunity = Boolean(props.opportunityId)

@@ -13,12 +13,34 @@
     }"
   >
     <template #body-title>
-      <div class="flex items-center gap-3">
-        <h3 class="text-2xl font-semibold leading-6 text-ink-gray-9">
-          {{ editMode ? __('Edit Event') : __('Create Event') }}
-        </h3>
+      <div class="flex flex-col gap-1">
+        <div class="flex items-center gap-3">
+          <h3 class="text-2xl font-semibold leading-6 text-ink-gray-9">
+            {{ editMode ? __('Edit Event') : __('Create Event') }}
+          </h3>
+
+          <Button
+            v-if="referenceDoc?.name"
+            size="sm"
+            :label="__('Open ') + referenceDoc.type"
+            @click="redirect"
+          >
+            <template #suffix>
+              <ArrowUpRightIcon class="h-4 w-4" />
+            </template>
+          </Button>
+        </div>
+
+        <div
+          v-if="referenceTitle"
+          class="text-base leading-6 text-ink-gray-9 mt-1"
+          :title="referenceTitle"
+        >
+          {{ referenceTitle }}
+        </div>
       </div>
     </template>
+
     <template #body-content>
       <div class="flex flex-col gap-4">
         <div>
@@ -30,6 +52,29 @@
             :placeholder="__('Call with John Doe')"
           />
         </div>
+
+
+<!-- <div>
+  <FormControl
+    label="Create Event For"
+    type="select"
+    v-model="selectedRefType"
+    :options="['Lead', 'Opportunity', 'Customer']"
+    :placeholder="__('Select Type')"
+  />
+</div>
+
+<div  class="mt-2">
+  <Link
+    v-model="selectedRefName"
+    :doctype="selectedRefType"
+    :placeholder="`Select ${selectedRefType}`"
+    :hideMe="true"
+    :options="formatRefLabel"
+  />
+</div> -->
+
+
         <div>
           <div class="mb-1.5 text-xs text-ink-gray-5">
             {{ __('Description') }}
@@ -52,34 +97,6 @@
               </template>
             </Button>
           </Dropdown>
-          <!-- <Link
-            class="form-control"
-            :value="getUser(_event._assign).full_name"
-            doctype="User"
-            @change="(option) => (_event._assign = option)"
-            :placeholder="__('John Doe')"
-            :hideMe="true"
-          >
-            <template #prefix>
-              <UserAvatar class="mr-2 !h-4 !w-4" :user="_event.allocated_to" />
-            </template>
-            <template #item-prefix="{ option }">
-              <UserAvatar class="mr-2" :user="option.value" size="sm" />
-            </template>
-            <template #item-label="{ option }">
-              <Tooltip :text="option.value">
-                <div class="cursor-pointer">
-                  {{ getUser(option.value).full_name }}
-                </div>
-              </Tooltip>
-            </template>
-          </Link> -->
-          <FormControl
-            v-model="_event.event_type"
-            type="select"
-            :options="eventTypeOptions"
-            :placeholder="__('Event Type')"
-          />
           <FormControl
             v-model="_event.event_category"
             type="select"
@@ -132,23 +149,17 @@
           >
           </Link>
         </div>
-        <!-- Only show when editing an existing event -->
-<div v-if="editMode" class="flex items-center gap-2">
-  <FormControl
-    class="form-control"
-    type="checkbox"
-    v-model="createAnother"
-  />
-  <label
-    class="text-sm text-ink-gray-5"
-    @click="createAnother = !createAnother"
-  >
-    {{ __('Create New Event') }}
-  </label>
-</div>
+        <div v-if="editMode" class="flex items-center gap-2">
+          <FormControl class="form-control" type="checkbox" v-model="createAnother" />
+          <label
+            class="text-sm text-ink-gray-5"
+            @click="createAnother = !createAnother"
+          >
+            {{ __('Create New Event') }}
+          </label>
+        </div>
 
         <div class="flex flex-wrap items-center gap-2 w-full" v-if="_event.sync_with_google_calendar">
-          <!-- Multi input to enter email addresses for event participants. -->
           <MultiValueInput
             v-model="event_participants"
             class="flex-grow"
@@ -173,36 +184,50 @@ import MultiValueInput from '../Controls/MultiValueInput.vue'
 import { eventStatusOptions, createToast } from '@/utils'
 import { usersStore } from '@/stores/users'
 import { capture } from '@/telemetry'
-import { TextEditor, Dropdown, FormControl, Tooltip, call, TextInput, createResource } from 'frappe-ui'
-import { ref, watch, nextTick, onMounted } from 'vue'
+import { TextEditor, Dropdown, FormControl, Tooltip, call, TextInput } from 'frappe-ui'
+import { ref, watch, nextTick, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import ArrowUpRightIcon from '@/components/Icons/ArrowUpRightIcon.vue'
+
+const router = useRouter()
 
 function validate(value) {
   return /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(value)
 }
 
 const props = defineProps({
-  event: {
-    type: Object,
-    default: {},
-  },
-  doctype: {
-    type: String,
-    default: 'Lead',
-  },
-  doc: {
-    type: String,
-    default: '',
-  },
+  event: { type: Object, default: {} },
+  doctype: { type: String, default: 'Lead' },
+  doc: { type: String, default: '' },
 })
 
 const show = defineModel()
 const createAnother = ref(true)
-
 const events = defineModel('reloadEvents')
-
 const emit = defineEmits(['updateEvent', 'after'])
 
 const { getUser } = usersStore()
+const selectedRefType = ref('')
+const selectedRefName = ref('')
+
+function formatRefLabel(doc) {
+  console.log('doc', doc)
+  if (!doc) return ''
+  if (selectedRefType.value === 'Customer') {
+    return doc.customer_name || doc.name
+  }
+  if (selectedRefType.value === 'Lead') {
+    return (
+      [doc.company_name, doc.first_name, doc.last_name].filter(Boolean).join(' ') ||
+      doc.name
+    )
+  }
+  if (selectedRefType.value === 'Opportunity') {
+    return doc.opportunity_title || doc.customer_name || doc.name
+  }
+  return doc.name
+}
+
 
 const title = ref(null)
 const editMode = ref(false)
@@ -213,18 +238,20 @@ const _event = ref({
   starts_on: '',
   ends_on: '',
   status: 'Open',
-  event_type: 'Private',
+  event_type: 'Public',
   event_category: 'Event',
   sync_with_google_calendar: getUser().google_calendar ? 1 : 0,
   google_calendar: getUser().google_calendar,
 })
 
 const event_participants = ref([])
-
 const eventTypeOptions = ref({})
 const eventCategoryOptions = ref({})
 const eventMeta = ref({})
 updateEventMeta()
+
+const referenceTitle = ref('')
+const referenceDoc = ref({ type: '', name: '' })
 
 async function updateEventMeta() {
   eventMeta.value = await call('next_crm.api.doc.get_fields_meta', {
@@ -238,6 +265,28 @@ function updateEventStatus(status) {
   _event.value.status = status
 }
 
+function redirect() {
+  if (!referenceDoc.value?.name) return
+
+  let name =
+    referenceDoc.value.type === 'Opportunity'
+      ? 'Opportunity'
+      : referenceDoc.value.type === 'Customer'
+      ? 'Customer'
+      : 'Lead'
+
+  let params = { leadId: referenceDoc.value.name }
+
+  if (name === 'Opportunity') {
+    params = { opportunityId: referenceDoc.value.name }
+  } else if (name === 'Customer') {
+    params = { customerId: referenceDoc.value.name }
+  }
+
+  router.push({ name, params })
+}
+
+
 async function updateEvent() {
   if (!_event.value.subject) {
     createToast({
@@ -248,6 +297,7 @@ async function updateEvent() {
     })
     return
   }
+
   if (!_event.value.allocated_to) {
     _event.value.allocated_to = getUser().name
   }
@@ -262,91 +312,124 @@ async function updateEvent() {
     })
     return
   }
+
   _event.value.assigned_by = getUser().name
+
   try {
     if (_event.value.name) {
-      _event.value.event_participants = _event.value.event_participants.filter(
-        (participant) => participant.reference_doctype !== 'User' || participant.reference_docname !== 'Guest',
-      )
       _event.value.event_participants = [
-        ..._event.value.event_participants,
-        ...event_participants.value.map((email) => ({
-          reference_doctype: 'User',
-          reference_docname: 'Guest',
-          email: email,
-        })),
+  ..._event.value.event_participants.filter(
+    (p) =>
+      !['Lead', 'Opportunity', 'Customer'].includes(p.reference_doctype) &&
+      (p.reference_doctype !== 'User' || p.reference_docname !== 'Guest')
+  ),
+
+  ...(selectedRefType.value && selectedRefName.value
+    ? [
+        {
+          reference_doctype: selectedRefType.value,
+          reference_docname: selectedRefName.value,
+        },
       ]
+    : []),
+
+  ...event_participants.value.map((email) => ({
+    reference_doctype: 'User',
+    reference_docname: 'Guest',
+    email: email,
+  })),
+]
 
       let d = await call('frappe.client.set_value', {
         doctype: 'Event',
         name: _event.value.name,
         fieldname: _event.value,
       })
-      if (d.name) {
-        events.value.reload()
-      }
+      if (d.name) events.value.reload()
       createToast({
         title: __('Event updated successfully'),
         icon: 'check',
         iconClasses: 'text-ink-green-3',
       })
-    } else {
-      let doc = {
-      doctype: 'Event',
-      reference_type: props.doctype,
-      reference_name: props.doc || null,
-      event_participants: [
-        ...(props.doc
-          ? [{
+    }else {
+  let doc = {
+    doctype: 'Event',
+    reference_type: selectedRefType.value || props.doctype,
+    reference_name: selectedRefName.value || props.doc || null,
+    event_participants: [
+      ...(selectedRefType.value && selectedRefName.value
+        ? [
+            {
+              reference_doctype: selectedRefType.value,
+              reference_docname: selectedRefName.value,
+            },
+          ]
+        : props.doc
+        ? [
+            {
               reference_doctype: props.doctype,
               reference_docname: props.doc,
-            }]
-          : []),
-        // Always include the email-based participants
-        ...event_participants.value.map((email) => ({
-          reference_doctype: 'User',
-          reference_docname: 'Guest',
-          email: email,
-        })),
-      ],
-      ..._event.value,
+            },
+          ]
+        : []),
+      ...event_participants.value.map((email) => ({
+        reference_doctype: 'User',
+        reference_docname: 'Guest',
+        email: email,
+      })),
+    ],
+    ..._event.value,
+  }
+
+  let d = await call('frappe.client.insert', { doc: doc })
+  if (d.name) {
+    capture('event_created')
+    events.value.reload()
+    emit('after')
+  }
+  createToast({
+    title: __('Event created successfully'),
+    icon: 'check',
+    iconClasses: 'text-ink-green-3',
+  })
+}
+
+const refType = selectedRefType.value || props.doctype
+    const refName = selectedRefName.value || props.doc
+    if (refType && refName) {
+      await call('frappe.client.set_value', {
+        doctype: refType,
+        name: refName,
+        fieldname: {
+          last_modified: new Date().toISOString(),
+        },
+      })
     }
 
-      let d = await call('frappe.client.insert', {
-        doc: doc,
+    if (
+      (_event.value.status === 'Closed' || _event.value.status === 'Completed') &&
+      createAnother.value
+    ) {
+      nextTick(() => {
+        editMode.value = false
+        _event.value = {
+          title: '',
+          description: '',
+          _assign: '',
+          starts_on: '',
+          ends_on: '',
+          status: 'Open',
+          event_type: 'Public',
+          event_category: 'Event',
+          sync_with_google_calendar: getUser().google_calendar ? 1 : 0,
+          google_calendar: getUser().google_calendar,
+        }
+        event_participants.value = [getUser().email]
+        show.value = true
       })
-      if (d.name) {
-        capture('event_created')
-        events.value.reload()
-        emit('after')
-      }
-      createToast({
-        title: __('Event created successfully'),
-        icon: 'check',
-        iconClasses: 'text-ink-green-3',
-      })
+    } else {
+      show.value = false
     }
-    if (_event.value.status === 'Closed' || _event.value.status === 'Completed' && createAnother.value) {
-  nextTick(() => {
-    editMode.value = false
-    _event.value = {
-      title: '',
-      description: '',
-      _assign: '',
-      starts_on: '',
-      ends_on: '',
-      status: 'Open',
-      event_type: 'Private',
-      event_category: 'Event',
-      sync_with_google_calendar: getUser().google_calendar ? 1 : 0,
-      google_calendar: getUser().google_calendar,
-    }
-    event_participants.value = [getUser().email]
-    show.value = true
-  })
-} else {
-  show.value = false
-}
   } catch (error) {
     createToast({
       title: __(`Error ${editMode.value ? 'updating' : 'adding'} Event`),
@@ -357,29 +440,71 @@ async function updateEvent() {
   }
 }
 
-function render() {
+async function render() {
   editMode.value = false
-  nextTick(() => {
+  nextTick(async () => {
     title.value?.el?.focus?.()
     _event.value = { ...props.event }
+
     if (_event.value.subject) {
       editMode.value = true
-      // get event_participants from event, if any
       event_participants.value = (_event.value.event_participants || [])
-        .filter((participant) => participant.reference_doctype === 'User' && participant.reference_docname === 'Guest')
-        .map((participant) => participant.email)
+        .filter((p) => p.reference_doctype === 'User' && p.reference_docname === 'Guest')
+        .map((p) => p.email)
     } else {
       event_participants.value = [getUser().email]
+    }
+
+    // reset
+    referenceTitle.value = ''
+    referenceDoc.value = { type: '', name: '' }
+
+let refRow = (_event.value.event_participants || []).find(
+  (p) => ['Lead', 'Customer', 'Opportunity'].includes(p.reference_doctype)
+)
+
+if (refRow) {
+  selectedRefType.value = refRow.reference_doctype
+  selectedRefName.value = refRow.reference_docname
+}
+
+
+    if (refRow) {
+      referenceDoc.value = {
+        type: refRow.reference_doctype,
+        name: refRow.reference_docname,
+      }
+      try {
+        const doc = await call('frappe.client.get', {
+          doctype: refRow.reference_doctype,
+          name: refRow.reference_docname,
+        })
+        if (refRow.reference_doctype === 'Lead') {
+          referenceTitle.value =
+            [doc.company_name, doc.first_name, doc.last_name]
+              .filter(Boolean)
+              .join(' ')
+              .trim() || doc.title || doc.name
+        } else if (refRow.reference_doctype === 'Customer') {
+          referenceTitle.value = doc.customer_name || doc.name
+        } else if (refRow.reference_doctype === 'Opportunity') {
+          referenceTitle.value = doc.title || doc.name
+        } else {
+          referenceTitle.value = doc.title || doc.name
+        }
+      } catch (err) {
+        referenceTitle.value = refRow.reference_docname
+      }
     }
   })
 }
 
 onMounted(() => show.value && render())
+watch(show, (value) => { if (value) render() })
 
-watch(show, (value) => {
-  if (!value) return
-  render()
-})
+
+
+
 </script>
 
 <style scoped>

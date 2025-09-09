@@ -79,7 +79,7 @@ function showEvent(t) {
     starts_on: '',
     ends_on: '',
     status: 'Open',
-    event_type: 'Private',
+    event_type: 'Public',
     event_category: 'Event',
     sync_with_google_calendar: user_google_calendar ? 1 : 0,
     google_calendar: user_google_calendar,

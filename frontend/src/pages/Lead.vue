@@ -201,13 +201,15 @@
         class="flex flex-1 flex-col justify-between overflow-hidden"
       >
         <div class="flex flex-col overflow-y-auto">
-          <div
-            v-for="(section, i) in fieldsLayout.data"
-            :key="section.label"
-            class="flex flex-col p-3"
-            :class="{ 'border-b': i !== fieldsLayout.data.length - 1 }"
-          >
-          <Section :is-opened="section.opened" :label="section.label">
+          <template v-for="(section, i) in fieldsLayout.data" :key="section.label">
+            <div
+              v-if="!['Addresses', 'Contacts'].includes(section.label)"
+              class="flex flex-col p-3"
+              :class="{ 'border-b': i !== fieldsLayout.data.length - 1 }"
+            >
+          <Section 
+
+          :is-opened="section.opened" :label="section.label">
               <template #actions>
                 <div v-if="section.contacts" class="pr-2">
                   <Link
@@ -258,7 +260,7 @@
                       />
                     </template>
                   </Link>
-                </div>
+                </div> 
                 <Button
                   v-else-if="
                     ((!section.contacts && !section.addresses && i == 2) || i == 0) && isManager()
@@ -305,7 +307,7 @@
                     class="px-2 pb-2.5"
                     :class="[i == 0 ? 'pt-5' : 'pt-2.5']"
                   >
-                    <Section :is-opened="contact.opened">
+                    <Section  :is-opened="contact.opened">
                       <template #header="{ opened, toggle }">
                         <div
                           class="flex cursor-pointer items-center justify-between gap-2 pr-1 text-base leading-5 text-ink-gray-7"
@@ -366,12 +368,12 @@
                             {{ contact.mobile_no }}
                           </a>
                         </div>
-                        <!-- <div class="flex items-center gap-3 p-1 py-1.5">
+                         <!-- <div class="flex items-center gap-3 p-1 py-1.5">
                           <PhoneIcon class="h-4 w-4" />
                           <a :href="`tel:${contact.phone}`" class="hover:underline text-blue-600">
                             {{ contact.phone }}
                           </a>
-                        </div> -->
+                        </div>  -->
                       </div>
                     </Section>
                   </div>
@@ -477,8 +479,10 @@
                   {{ __('No contacts added') }}
                 </div>
               </div>
-            </Section>
+            </Section> 
           </div>
+        </template>
+
         </div>
       </div>
     </Resizer>

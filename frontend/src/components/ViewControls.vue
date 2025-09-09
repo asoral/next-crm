@@ -3,14 +3,15 @@
     <div class="flex flex-col gap-2">
       <div class="flex items-center justify-between gap-2 overflow-x-auto">
         <div class="flex gap-2">
-          <Filter v-model="list" :doctype="doctype" :default_filters="filters" @update="updateFilter" />
           <input
           v-if="doctype === 'Customer'"
           v-model="customerSearch"
           type="text"
           placeholder="Search Customer"
-          class="border rounded px-2 py-1 text-sm w-[150px]"
+          class="border rounded px-2 py-1 text-sm w-[185px]"
         />
+          <Filter v-model="list" :doctype="doctype" :default_filters="filters" @update="updateFilter" />
+
           <GroupBy v-if="route.params.viewType === 'group_by'" v-model="list" :doctype="doctype"
             :hideLabel="isMobileView" @update="updateGroupBy" />
         </div>

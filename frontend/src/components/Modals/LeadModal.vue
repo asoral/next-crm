@@ -47,7 +47,7 @@ import Fields from '@/components/Fields.vue'
 import { usersStore } from '@/stores/users'
 import { statusesStore } from '@/stores/statuses'
 import { capture } from '@/telemetry'
-import { createResource } from 'frappe-ui'
+import { createResource, call } from 'frappe-ui'
 import { computed, onMounted, ref, reactive, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 
@@ -98,6 +98,11 @@ const lead = reactive({
   industry: '',
   status: '',
   lead_owner: '',
+  city: '',
+  state: '',
+  country: 'India',
+  phone: '',
+
 })
 
 const createLead = createResource({
@@ -153,7 +158,48 @@ function createNewLead() {
       }
       isLeadCreating.value = true
     },
-    onSuccess(data) {
+    async onSuccess(data) {
+      try {
+        // const contactRes = await call('frappe.client.insert', {
+        //   doc: {
+        //     doctype: 'Contact',
+        //     first_name: lead.first_name,
+        //     last_name: lead.last_name,
+        //     gender: lead.gender,
+        //     status: 'Passive',
+        //     email_ids: lead.email_id
+        //       ? [{ email_id: lead.email_id, is_primary: 1 }]
+        //       : [],
+        //     phone_nos: lead.mobile_no
+        //       ? [{ phone: lead.mobile_no, is_primary_mobile_no: 1 }]
+        //       : [],
+        //     links: [
+        //       { link_doctype: 'Lead', link_name: data.name },
+        //     ],
+        //   },
+        // })
+
+        if (lead.city) {
+          await call('frappe.client.insert', {
+            doc: {
+              doctype: 'Address',
+              address_title: `${lead.first_name} ${lead.last_name}`.trim(),
+              address_line1: lead.city,
+              city: lead.city || '',        
+              state: lead.state || '',   
+              country: lead.country || 'India', 
+              pincode: lead.pincode || '',  
+              phone: lead.mobile_no || '',
+              links: [
+                { link_doctype: 'Lead', link_name: data.name },
+              ],
+            },
+          })
+        }
+      } catch (e) {
+        console.error('Error creating contact/address from lead:', e)
+      }
+
       capture('lead_created')
       isLeadCreating.value = false
       show.value = false
@@ -169,6 +215,7 @@ function createNewLead() {
     },
   })
 }
+
 
 const showQuickEntryModal = defineModel('quickEntry')
 

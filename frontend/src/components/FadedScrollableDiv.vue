@@ -37,23 +37,23 @@ function updateMaskStyle() {
 
   maskStyle.value = 'none'
 
-  // faded on both sides
-  if ((side.value == 'right' && scrollWidth > clientWidth) || (side.value == 'bottom' && scrollHeight > clientHeight)) {
-    maskStyle.value = `linear-gradient(to ${side.value}, transparent, black ${props.maskLength}px, black calc(100% - ${props.maskLength}px), transparent);`
-  }
+  // // faded on both sides
+  // if ((side.value == 'right' && scrollWidth > clientWidth) || (side.value == 'bottom' && scrollHeight > clientHeight)) {
+  //   maskStyle.value = `linear-gradient(to ${side.value}, transparent, black ${props.maskLength}px, black calc(100% - ${props.maskLength}px), transparent);`
+  // }
 
-  // faded on left or top
-  if (
-    (side.value == 'right' && scrollLeft - 20 > clientWidth) ||
-    (side.value == 'bottom' && scrollTop + clientHeight >= scrollHeight)
-  ) {
-    maskStyle.value = `linear-gradient(to ${side.value}, transparent, black ${props.maskLength}px, black 100%, transparent);`
-  }
+  // // faded on left or top
+  // if (
+  //   (side.value == 'right' && scrollLeft - 20 > clientWidth) ||
+  //   (side.value == 'bottom' && scrollTop + clientHeight >= scrollHeight)
+  // ) {
+  //   maskStyle.value = `linear-gradient(to ${side.value}, transparent, black ${props.maskLength}px, black 100%, transparent);`
+  // }
 
-  // faded on right or bottom
-  if ((side.value == 'right' && scrollLeft == 0) || (side.value == 'bottom' && scrollTop == 0)) {
-    maskStyle.value = `linear-gradient(to ${side.value}, black calc(100% - ${props.maskLength}px), transparent 100%);`
-  }
+  // // faded on right or bottom
+  // if ((side.value == 'right' && scrollLeft == 0) || (side.value == 'bottom' && scrollTop == 0)) {
+  //   maskStyle.value = `linear-gradient(to ${side.value}, black calc(100% - ${props.maskLength}px), transparent 100%);`
+  // }
 
   if (
     (side.value == 'right' && clientWidth == scrollWidth) ||
