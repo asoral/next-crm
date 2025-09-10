@@ -170,14 +170,14 @@ import NotificationsIcon from '@/components/Icons/NotificationsIcon.vue'
 import SidebarLink from '@/components/SidebarLink.vue'
 import { viewsStore } from '@/stores/views'
 import { unreadNotificationsCount } from '@/stores/notifications'
-import { computed, h, ref, watch } from 'vue'
+import { computed, h, ref, watch, onMounted } from 'vue'
 import { mobileSidebarOpened as sidebarOpened } from '@/composables/settings'
 // import { getSidebarLinks } from '@/utils'
 // import { usersStore } from '@/stores/user'
 import { sessionStore } from '@/stores/session'
 import { useSidebar } from '@/stores/sidebar'
 import { useSettings } from '@/stores/settings'
-import { Button, createResource, Tooltip } from 'frappe-ui'
+import { Button, createResource, Tooltip, call } from 'frappe-ui'
 import PageModal from '@/components/Modals/PageModal.vue'
 import { useRouter } from 'vue-router'
 import * as icons from 'lucide-vue-next'
@@ -239,6 +239,25 @@ watch(showPageModal, (val) => {
 })
 
 
+
+const isSideBarVisible = ref(false)
+
+async function fetchCRMViewSettings() {
+  let settings = await call('frappe.client.get', {
+    doctype: 'NCRM Settings',
+    name: 'NCRM Settings'
+  })
+  console.log('settingss==', settings)
+  if (settings) {
+    isSideBarVisible.value = Boolean(settings.custom_hide_options_in_sidebar)
+    console.log('isSidebarVisible', isSideBarVisible.value)
+  }
+}
+
+onMounted(() => {
+  fetchCRMViewSettings()
+})
+
 const links = [
   {
     label: 'Leads',
@@ -294,12 +313,19 @@ const links = [
 ]
 
 const allViews = computed(() => {
+  let _links = [...links]
+
+if (isSideBarVisible.value) {
+  const hiddenLabels = ['Call Logs', 'Email Templates', 'Contacts', 'Addresses']
+  _links = _links.filter(link => !hiddenLabels.includes(link.label))
+}
+
   let _views = [
     {
       name: 'All Views',
       hideLabel: true,
       opened: true,
-      views: links,
+      views: _links,
     },
   ]
   if (getPublicViews().length) {

@@ -310,15 +310,21 @@ const links = [
 
 
 const allViews = computed(() => {
+  let _links = [...links]
+
+  if (isSideBarVisible.value) {
+    const hiddenLabels = ['Call Logs', 'Email Templates', 'Contacts', 'Addresses']
+    _links = _links.filter(link => !hiddenLabels.includes(link.label))
+  }
+
   let _views = [
     {
       name: 'All Views',
       hideLabel: true,
       opened: true,
-      views: links,
+      views: _links,
     },
   ]
-
 
   const publicViews = getPublicViews()
   const pinnedViews = getPinnedViews()
@@ -340,13 +346,14 @@ const allViews = computed(() => {
     })
   }
 
-  if(groupedViews.length){
+  if (groupedViews.length) {
     _views.push({
       name: 'Groups View',
       opened: true,
-      views: parseView(groupedViews)
+      views: parseView(groupedViews),
     })
   }
+
   return _views
 })
 
