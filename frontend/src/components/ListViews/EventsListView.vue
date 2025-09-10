@@ -226,8 +226,7 @@ const props = defineProps({
     }),
   },
 })
-console.log('props', props.rows)
-console.log('props columns', props.columns)
+
 
 
 const emit = defineEmits([
@@ -253,9 +252,9 @@ const selectedRows = computed({
   }
 })
 
-watch(selectedRows, (val) => {
-  console.log("🔥 Selected rows being passed to bulk actions:", val)
-})
+// watch(selectedRows, (val) => {
+//   console.log("🔥 Selected rows being passed to bulk actions:", val)
+// })
 
 const { user } = sessionStore()
 const listBulkActionsRef = ref(null)

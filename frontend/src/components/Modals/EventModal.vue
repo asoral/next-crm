@@ -211,7 +211,7 @@ const selectedRefType = ref('')
 const selectedRefName = ref('')
 
 function formatRefLabel(doc) {
-  console.log('doc', doc)
+  // console.log('doc', doc)
   if (!doc) return ''
   if (selectedRefType.value === 'Customer') {
     return doc.customer_name || doc.name
@@ -455,7 +455,6 @@ async function render() {
       event_participants.value = [getUser().email]
     }
 
-    // reset
     referenceTitle.value = ''
     referenceDoc.value = { type: '', name: '' }
 
@@ -469,33 +468,51 @@ if (refRow) {
 }
 
 
-    if (refRow) {
-      referenceDoc.value = {
-        type: refRow.reference_doctype,
-        name: refRow.reference_docname,
-      }
-      try {
-        const doc = await call('frappe.client.get', {
-          doctype: refRow.reference_doctype,
-          name: refRow.reference_docname,
-        })
-        if (refRow.reference_doctype === 'Lead') {
+if (refRow) {
+  referenceDoc.value = {
+    type: refRow.reference_doctype,
+    name: refRow.reference_docname,
+  }
+  try {
+    const doc = await call('frappe.client.get', {
+      doctype: refRow.reference_doctype,
+      name: refRow.reference_docname,
+    })
+
+    if (refRow.reference_doctype === 'Lead') {
+      referenceTitle.value =
+        [doc.company_name, doc.first_name, doc.last_name]
+          .filter(Boolean)
+          .join(' ')
+          .trim() || doc.title || doc.name
+    } else if (refRow.reference_doctype === 'Customer') {
+      referenceTitle.value = doc.customer_name || doc.name
+    } else if (refRow.reference_doctype === 'Opportunity') {
+      if (doc.lead) {
+        try {
+          const leadDoc = await call('frappe.client.get', {
+            doctype: 'Lead',
+            name: doc.lead,
+          })
           referenceTitle.value =
-            [doc.company_name, doc.first_name, doc.last_name]
+            [leadDoc.company_name, leadDoc.first_name, leadDoc.last_name]
               .filter(Boolean)
               .join(' ')
-              .trim() || doc.title || doc.name
-        } else if (refRow.reference_doctype === 'Customer') {
-          referenceTitle.value = doc.customer_name || doc.name
-        } else if (refRow.reference_doctype === 'Opportunity') {
-          referenceTitle.value = doc.title || doc.name
-        } else {
+              .trim() || leadDoc.title || leadDoc.name
+        } catch (leadErr) {
           referenceTitle.value = doc.title || doc.name
         }
-      } catch (err) {
-        referenceTitle.value = refRow.reference_docname
+      } else {
+        referenceTitle.value = doc.title || doc.name
       }
+    } else {
+      referenceTitle.value = doc.title || doc.name
     }
+  } catch (err) {
+    referenceTitle.value = refRow.reference_docname
+  }
+}
+
   })
 }
 

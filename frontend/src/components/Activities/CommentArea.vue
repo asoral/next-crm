@@ -42,4 +42,5 @@ import { timeAgo, dateFormat, dateTooltipFormat } from '@/utils'
 const props = defineProps({
   activity: Object,
 })
+console.log('activity', props.activity)
 </script>

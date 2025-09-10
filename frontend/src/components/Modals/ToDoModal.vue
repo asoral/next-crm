@@ -387,7 +387,6 @@ async function render() {
                 .trim()
 
               referenceTitle.value = customTitle || doc.title || doc.name
-              console.log("reference_title", referenceTitle.value)
             } catch (leadErr) {
               console.warn('Error fetching linked lead:', leadErr)
               referenceTitle.value = doc.title || doc.name

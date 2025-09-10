@@ -213,7 +213,7 @@ async function fetchQuotations() {
     lead: props.leadId || '',
   })
 
-  console.log('Quotations with Items:', res)
+  // console.log('Quotations with Items:', res)
 
   quotations.value = res || []
   props.count.value = quotations.value.length

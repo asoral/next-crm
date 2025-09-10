@@ -183,12 +183,12 @@ import { viewsStore } from '@/stores/views'
 import { unreadNotificationsCount, notificationsStore } from '@/stores/notifications'
 import { FeatherIcon } from 'frappe-ui'
 import { useStorage } from '@vueuse/core'
-import { computed, h, ref, watch } from 'vue'
+import { computed, h, ref, watch, onMounted } from 'vue'
 import CheckInIcon from '@/components/Icons/CheckIcon.vue'
 import { sessionStore } from '@/stores/session'
 import { useSidebar } from '@/stores/sidebar'
 import { useSettings } from '@/stores/settings'
-import { Button, createResource, Tooltip } from 'frappe-ui'
+import { Button, createResource, Tooltip, call } from 'frappe-ui'
 import PageModal from '@/components/Modals/PageModal.vue'
 import { useRouter } from 'vue-router'
 import * as icons from 'lucide-vue-next'
@@ -221,6 +221,26 @@ fetchWebPages()
 
 watch(showPageModal, (val) => {
   if (!val) fetchWebPages()
+})
+
+
+
+const isSideBarVisible = ref(false)
+
+async function fetchCRMViewSettings() {
+  let settings = await call('frappe.client.get', {
+    doctype: 'NCRM Settings',
+    name: 'NCRM Settings'
+  })
+  console.log('settingss==', settings)
+  if (settings) {
+    isSideBarVisible.value = Boolean(settings.custom_hide_options_in_sidebar)
+    console.log('isSidebarVisible', isSideBarVisible.value)
+  }
+}
+
+onMounted(() => {
+  fetchCRMViewSettings()
 })
 
 const links = [
@@ -273,6 +293,7 @@ const links = [
     label: 'Call Logs',
     icon: PhoneIcon,
     to: 'Call Logs',
+
   },
   {
     label: 'Email Templates',
@@ -285,6 +306,8 @@ const links = [
     to: 'CheckIn',
   },
 ]
+
+
 
 const allViews = computed(() => {
   let _views = [

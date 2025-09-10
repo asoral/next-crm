@@ -275,6 +275,17 @@ async function sendComment() {
       attachments: attachments.value.map((x) => x.name),
     })
   }
+
+  try {
+    await call('frappe.client.set_value', {
+      doctype: props.doctype,
+      name: doc.value.data.name,
+      fieldname: { last_modified: new Date().toISOString(), },
+    })
+  } catch (e) {
+    console.error("Failed to update last_modified:", e)
+  }
+
 }
 
 async function submitEmail() {

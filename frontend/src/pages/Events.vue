@@ -359,14 +359,14 @@ function parseRows(rows) {
 
 
 async function getEventData(name) {
-  console.log("🔍 Fetching Event with name:", name)
+  // console.log("🔍 Fetching Event with name:", name)
 
   try {
     const eventValue = await call('frappe.client.get', {
       doctype: 'Event',
       name: name,
     })
-    console.log("✅ Event fetched:", eventValue)
+    // console.log("✅ Event fetched:", eventValue)
     return eventValue
   } catch (error) {
     console.error("❌ Failed to fetch Event:", error)
@@ -394,7 +394,7 @@ async function showEvent(name) {
       reference_docname:fullEvent.reference_docname?.label || fullEvent.reference_docname,
       event_participants: fullEvent.event_participants || [],
     }
-    console.log("-===0=-jkdjksnd ",selectedEvent.value)
+    // console.log("-===0=-jkdjksnd ",selectedEvent.value)
     showEventModal.value = true
   }
 

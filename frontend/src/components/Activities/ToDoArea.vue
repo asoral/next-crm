@@ -122,7 +122,7 @@ const props = defineProps({
   modalRef: Object,
 })
 
-console.log('time', props.todos)
+// console.log('time', props.todos)
 const { getUser } = usersStore()
 const { $dialog } = globalStore()
 

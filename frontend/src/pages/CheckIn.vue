@@ -81,7 +81,7 @@ onMounted(async () => {
   try {
     const session = await axios.get('/api/method/frappe.auth.get_logged_user')
     const user = session?.data?.message
-    console.log("Logged-in user:", user)
+    // console.log("Logged-in user:", user)
 
     if (user) {
       const response = await axios.get('/api/resource/Employee', {
@@ -95,7 +95,7 @@ onMounted(async () => {
       if (empData) {
         employee.value = empData
         CheckEmployee.value = empData
-        console.log("Matched Employee:", empData)
+        // console.log("Matched Employee:", empData)
       } else {
         console.warn("No employee found for user:", user)
       }
@@ -319,7 +319,7 @@ const uploadSelfieToCheckin = async (docname) => {
 		await axios.post("/api/method/upload_file", formData, {
 			headers: { "Content-Type": "multipart/form-data" }
 		})
-		console.log("Selfie uploaded for", docname)
+		// console.log("Selfie uploaded for", docname)
 	} catch (err) {
 		console.error("Failed to upload selfie:", err)
 		// toast({

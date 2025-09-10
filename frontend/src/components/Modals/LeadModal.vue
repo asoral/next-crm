@@ -185,6 +185,7 @@ function createNewLead() {
               doctype: 'Address',
               address_title: `${lead.first_name} ${lead.last_name}`.trim(),
               address_line1: lead.city,
+              address_line2: lead.city,
               city: lead.city || '',        
               state: lead.state || '',   
               country: lead.country || 'India', 

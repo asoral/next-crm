@@ -464,7 +464,7 @@ const breadcrumbs = computed(() => {
     route: { name: 'Opportunity', params: { opportunityId: opportunity.data.name } },
   })
 
-console.log('items --', items)
+// console.log('items --', items)
   return items
 })
 

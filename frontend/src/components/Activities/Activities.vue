@@ -524,7 +524,6 @@ const activities = computed(() => {
     return sortByCreation(all_activities.data.calls)
   } else if (title.value == 'ToDos') {
     if (!all_activities.data?.todos) return []
-    console.log("ToDos tab data:", all_activities.data.todos) // 👈 Add this
 
     return sortByCreation(all_activities.data.todos)
   } else if (title.value == 'Events') {

@@ -479,7 +479,7 @@ const customer = createResource({
   url: 'frappe.client.get',
   onSuccess: (data) => (opportunity.data._customersObj = data),
 })
-console.log('suctomer', customer)
+// console.log('suctomer', customer)
 const lead = createResource({
   url: 'frappe.client.get',
 })
@@ -642,7 +642,7 @@ const breadcrumbs = computed(() => {
     label:  opportunity.data?.title || oppTitle || __('Untitled'),
     route: { name: 'Opportunity', params: { opportunityId: opportunity.data.name } },
   })
-console.log('items', items)
+// console.log('items', items)
   return items
 })
 
