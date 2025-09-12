@@ -273,6 +273,20 @@ if (!_todo.value.description || !_todo.value.description) {
       })
       if (d.name) {
         todos.value.reload()
+        const refType = _todo.value.reference_type || props.doctype
+const refName = _todo.value.reference_name || props.doc
+if (refType && refName) {
+  await call('frappe.client.set_value', {
+    doctype: refType,
+    name: refName,
+    fieldname: {
+      last_modified: new Date().toISOString(),
+    },
+  })
+}
+
+       
+
       }
       createToast({
         title: __('Todo updated successfully'),
@@ -292,6 +306,23 @@ if (!_todo.value.description || !_todo.value.description) {
         capture('todo_created')
         todos.value.reload()
         emit('after')
+        const refType = _todo.value.reference_type || props.doctype
+const refName = _todo.value.reference_name || props.doc
+console.log('refenrece_type', refType)
+console.log('refenrece_name', refName)
+
+
+if (refType && refName) {
+  await call('frappe.client.set_value', {
+    doctype: refType,
+    name: refName,
+    fieldname: {
+      last_modified: new Date().toISOString(),
+    },
+  })
+}
+
+
       }
       createToast({
         title: __('Todo created successfully'),

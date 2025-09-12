@@ -109,7 +109,7 @@ import ToDoStatusIcon from '@/components/Icons/ToDoStatusIcon.vue'
 import ToDoPriorityIcon from '@/components/Icons/ToDoPriorityIcon.vue'
 import DotIcon from '@/components/Icons/DotIcon.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
-import { Tooltip, Dropdown, Button } from 'frappe-ui'
+import { Tooltip, Dropdown, Button, call } from 'frappe-ui'
 import { dateFormat, timeAgo, dateTooltipFormat, todoStatusOptions } from '@/utils'
 import { usersStore } from '@/stores/users'
 import { globalStore } from '@/stores/global'
@@ -122,7 +122,7 @@ const props = defineProps({
   modalRef: Object,
 })
 
-// console.log('time', props.todos)
+console.log('time===', props.todos)
 const { getUser } = usersStore()
 const { $dialog } = globalStore()
 
@@ -137,23 +137,46 @@ const sortedTodos = computed(() => {
 async function handleStatusChange(status, todo) {
   props.modalRef.updateToDoStatus(status, todo)
 
-  if (status === 'Closed') {
-    try {
-      const res = await fetch(`/api/resource/ToDo/${todo.name}`)
-      const fullToDo = await res.json()
+  let refType, refName
 
+  try {
+    const fullToDo = await call('frappe.client.get', {
+      doctype: 'ToDo',
+      name: todo.name,
+    }).then(r => r?.data || r)
+
+    // Fetch reference info from ToDo itself
+    if (fullToDo.reference_type && fullToDo.reference_name) {
+      refType = fullToDo.reference_type
+      refName = fullToDo.reference_name
+    }
+
+    if (refType && refName) {
+      await call('frappe.client.set_value', {
+        doctype: refType,
+        name: refName,
+        fieldname: {
+          last_modified: new Date().toISOString(),
+        },
+      })
+    }
+
+    // Reset modal if status is Closed
+    if (status === 'Closed') {
       props.modalRef.showToDo({
         custom_title: '',
         description: '',
-        allocated_to: fullToDo.data.allocated_to,
-        assigned_by: fullToDo.data.assigned_by,
+        allocated_to: fullToDo.allocated_to,
+        assigned_by: fullToDo.assigned_by,
         date: '',
         status: 'Open',
-        priority: fullToDo.data.priority || 'Medium',
+        priority: fullToDo.priority || 'Medium',
+        reference_type: fullToDo.reference_type,
+        reference_name: fullToDo.reference_name,
       })
-    } catch (err) {
-      console.error('Failed to fetch full ToDo:', err)
     }
+  } catch (err) {
+    console.error('Failed in handleStatusChange:', err)
   }
 }
 
