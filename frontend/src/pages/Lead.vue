@@ -1159,108 +1159,62 @@ const existingContact = ref('')
 const existingProspect = ref('')
 
 async function convertToOpportunity() {
-console.log('function triggered')
-if (!existingProspectChecked.value && !lead.data.company_name) {
-  createToast({
-    title: __('Error'),
-    text: __('Please enter organisation name to create new Prospect'),
-    icon: 'x',
-    iconClasses: 'text-ink-red-4',
-  })
-  return
-}
 
-if (existingContactChecked.value && !existingContact.value) {
-  createToast({
-    title: __('Error'),
-    text: __('Please select an existing contact'),
-    icon: 'x',
-    iconClasses: 'text-ink-red-4',
-  })
-  return
-}
-
-if (existingProspectChecked.value && !existingProspect.value) {
-  createToast({
-    title: __('Error'),
-    text: __('Please select an existing prospect'),
-    icon: 'x',
-    iconClasses: 'text-ink-red-4',
-  })
-  return
-}
-
-// -----------------------
-// 1. Fetch Lead Todos BEFORE conversion
-// -----------------------
-let leadTodosStatus = {}
-try {
-  const leadTodos = await call('frappe.client.get_list', {
-    doctype: 'ToDo',
-    filters: { reference_type: 'Lead', reference_name: lead.data.name },
-    fields: ['name', 'status']
-  })
-  leadTodos.data?.forEach(todo => {
-    leadTodosStatus[todo.name] = todo.status
-  })
-  console.log('leadTodo', leadTodos)
-} catch (err) {
-  console.error('Error fetching lead todos:', err)
-}
-
-// -----------------------
-// 2. Convert Lead to Opportunity
-// -----------------------
-let opportunity = await call(
-  'next_crm.overrides.lead.convert_to_opportunity',
-  {
-    lead: lead.data.name,
-    prospect: existingProspect.value,
-    existing_contact: existingContact.value,
-  },
-).catch((err) => {
-  createToast({
-    title: __('Error converting to Opportunity'),
-    text: __(err.messages?.[0]),
-    icon: 'x',
-    iconClasses: 'text-ink-red-4',
-  })
-})
-
-if (opportunity) {
-  capture('convert_lead_to_opportunity')
-
-  // -----------------------
-  // 3. Restore previously closed Todos
-  // -----------------------
-  try {
-    const linkedTodos = await call('frappe.client.get_list', {
-      doctype: 'ToDo',
-      filters: { reference_type: 'Opportunity', reference_name: opportunity },
-      fields: ['name']
+  if (!existingProspectChecked.value && !lead.data.company_name) {
+    createToast({
+      title: __('Error'),
+      text: __('Please enter organisation name to create new Prospect'),
+      icon: 'x',
+      iconClasses: 'text-ink-red-4',
     })
-
-    for (let todo of linkedTodos.data || []) {
-      if (leadTodosStatus[todo.name] === 'Closed') {
-        await call('frappe.client.set_value', {
-          doctype: 'ToDo',
-          name: todo.name,
-          fieldname: 'status',
-          value: 'Closed'
-        })
-      }
-    }
-  } catch (err) {
-    console.error('Error restoring closed Todos:', err)
+    return
   }
 
-  // -----------------------
-  // 4. Navigate to Opportunity
-  // -----------------------
-  router.push({ name: 'Opportunity', params: { opportunityId: opportunity } })
-}
-}
+  if (existingContactChecked.value && !existingContact.value) {
+    createToast({
+      title: __('Error'),
+      text: __('Please select an existing contact'),
+      icon: 'x',
+      iconClasses: 'text-ink-red-4',
+    })
+    return
+  }
 
+  if (existingProspectChecked.value && !existingProspect.value) {
+    createToast({
+      title: __('Error'),
+      text: __('Please select an existing prospect'),
+      icon: 'x',
+      iconClasses: 'text-ink-red-4',
+    })
+    return
+  }
+
+
+
+  let opportunity = await call(
+    'next_crm.overrides.lead.convert_to_opportunity',
+    {
+      lead: lead.data.name,
+      prospect: existingProspect.value,
+      existing_contact: existingContact.value,
+    },
+  ).catch((err) => {
+    createToast({
+      title: __('Error converting to Opportunity'),
+      text: __(err.messages?.[0]),
+      icon: 'x',
+      iconClasses: 'text-ink-red-4',
+    })
+  })
+
+  if (opportunity) {
+    capture('convert_lead_to_opportunity')
+    
+    router.push({ name: 'Opportunity', params: { opportunityId: opportunity } })
+  }
+  
+}
 
 const activities = ref(null)
 

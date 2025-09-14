@@ -234,7 +234,7 @@ class Lead(Lead):
             frappe.db.set_value("ToDo", todo.name, {
                 "reference_type": "Opportunity",
                 "reference_name": opportunity.name,
-                "status": old_status  # explicitly preserve the original status
+                "status": old_status  
             })
 
 

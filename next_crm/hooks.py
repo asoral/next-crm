@@ -158,6 +158,7 @@ doc_events = {
     },
     "ToDo": {
         "after_insert": ["next_crm.doc_events.todo.after_insert"],
+        "before_save":["next_crm.doc_events.todo.before_save"],
         "on_update": ["next_crm.doc_events.todo.on_update"],
         "before_insert": ["next_crm.doc_events.todo.before_insert"],
         "on_trash": ["next_crm.doc_events.todo.on_trash"],

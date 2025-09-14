@@ -62,3 +62,17 @@ def on_trash(doc, method=None):
             ignore_permissions=True,
             force=True,
         )
+
+
+def before_save(doc, method):
+    if doc.is_new():
+        return
+    db_value = frappe.get_doc("ToDo", doc.name)
+    print("db values:----->", db_value.db_get("status"), db_value.db_get("reference_type"))
+    print("new_value:---->",doc.status, doc.reference_type)
+
+    if db_value.db_get("status") == "Closed" and db_value.db_get("reference_type") == "Lead":
+        doc.db_set("custom_converting_into_opportunity", 1)
+    
+    if doc.db_get("custom_converting_into_opportunity") == 1 and doc.reference_type == "Opportunity" and doc.status != "Closed":
+        doc.db_set("status", "Closed")
