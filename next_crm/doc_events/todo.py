@@ -67,12 +67,15 @@ def on_trash(doc, method=None):
 def before_save(doc, method):
     if doc.is_new():
         return
-    db_value = frappe.get_doc("ToDo", doc.name)
-    print("db values:----->", db_value.db_get("status"), db_value.db_get("reference_type"))
-    print("new_value:---->",doc.status, doc.reference_type)
 
-    if db_value.db_get("status") == "Closed" and db_value.db_get("reference_type") == "Lead":
-        doc.db_set("custom_converting_into_opportunity", 1)
-    
-    if doc.db_get("custom_converting_into_opportunity") == 1 and doc.reference_type == "Opportunity" and doc.status != "Closed":
-        doc.db_set("status", "Closed")
+    # Get previous DB values of this exact ToDo
+    old_status, old_ref = frappe.db.get_value("ToDo", doc.name, ["status", "reference_type"])
+
+    print("db values:----->", old_status, old_ref)
+    print("new_value:---->", doc.status, doc.reference_type)
+
+    # If ToDo was already closed when linked to Lead
+    if old_status == "Closed" and old_ref == "Lead":
+        # and now it is getting linked to Opportunity
+        if doc.reference_type == "Opportunity" and doc.status != "Closed":
+            doc.db_set("status", "Closed")
