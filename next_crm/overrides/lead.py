@@ -228,13 +228,11 @@ class Lead(Lead):
 
         # Step 4: Re-link original ToDos from Lead to Opportunity (preserve status)
         # Step 4: Re-link original ToDos from Lead to Opportunity (preserve status)
-        todos = frappe.get_all("ToDo", filters={"reference_type": "Lead", "reference_name": self.name}, fields=["name", "status"])
+        todos = frappe.get_all("ToDo", filters={"reference_type": "Lead", "reference_name": self.name}, fields=["name"])
         for todo in todos:
-            old_status = todo.status
             frappe.db.set_value("ToDo", todo.name, {
                 "reference_type": "Opportunity",
                 "reference_name": opportunity.name,
-                "status": old_status  
             })
 
 
