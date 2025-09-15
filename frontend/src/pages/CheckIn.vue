@@ -20,7 +20,7 @@
 			<span v-if="locationStatus" class="font-medium text-gray-500 text-sm">
 				{{ locationStatus }}
 			</span>
-			<div class="rounded border-4  w-full h-170">
+			<div class="rounded border-4  w-full">
 				<iframe
 					width="100%"
 					frameborder="0"
@@ -71,7 +71,6 @@ onBeforeUnmount(() => {
 		videoRef.value.srcObject = null
 	}
 })
-
 const DOCTYPE = "Employee Checkin"
 const socket = inject("$socket")
 
@@ -81,7 +80,7 @@ onMounted(async () => {
   try {
     const session = await axios.get('/api/method/frappe.auth.get_logged_user')
     const user = session?.data?.message
-    // console.log("Logged-in user:", user)
+    console.log("Logged-in user:", user)
 
     if (user) {
       const response = await axios.get('/api/resource/Employee', {
@@ -95,7 +94,7 @@ onMounted(async () => {
       if (empData) {
         employee.value = empData
         CheckEmployee.value = empData
-        // console.log("Matched Employee:", empData)
+        console.log("Matched Employee:", empData)
       } else {
         console.warn("No employee found for user:", user)
       }
@@ -276,7 +275,6 @@ onBeforeUnmount(() => {
 const videoRef = ref(null)
 const canvasRef = ref(null)
 const capturedImage = ref(null)
-const capturedFile = ref(null)
 
 const startCamera = async () => {
 	try {
@@ -288,94 +286,61 @@ const startCamera = async () => {
 }
 
 const capturePhoto = async () => {
-	return new Promise((resolve) => {
-		const video = videoRef.value
-		const canvas = canvasRef.value
-		if (!video || !canvas) return resolve(null)
+	const video = videoRef.value
+	const canvas = canvasRef.value
+	if (!video || !canvas) return
 
-		const drawAndResolve = () => {
-			// set sensible defaults if video dims aren't available
-			canvas.width = video.videoWidth || 640
-			canvas.height = video.videoHeight || 480
-			const context = canvas.getContext("2d")
-			try {
-				context.drawImage(video, 0, 0, canvas.width, canvas.height)
-			} catch (e) {
-				// if drawImage fails, still try to create a blank blob
-				console.warn("drawImage failed, creating blank canvas:", e)
-			}
+	canvas.width = video.videoWidth
+	canvas.height = video.videoHeight
+	const context = canvas.getContext("2d")
+	context.drawImage(video, 0, 0, canvas.width, canvas.height)
 
-			canvas.toBlob((blob) => {
-				if (!blob) return resolve(null)
-				const file = new File([blob], "selfie.jpg", { type: "image/jpeg" })
-				// revoke previous object URL if present
-				if (capturedImage.value) {
-					try { URL.revokeObjectURL(capturedImage.value) } catch (e) {}
-				}
-				capturedFile.value = file
-				capturedImage.value = URL.createObjectURL(file)
-				resolve(file)
-			}, "image/jpeg", 0.9)
-		}
+	canvas.toBlob(async (blob) => {
+		const file = new File([blob], "selfie.jpg", { type: "image/jpeg" })
+		capturedImage.value = URL.createObjectURL(file)
 
-		// If video metadata is ready, draw immediately; otherwise wait briefly for loadedmetadata
-		if (video.videoWidth && video.videoHeight) {
-			drawAndResolve()
-		} else {
-			const onLoaded = () => {
-				video.removeEventListener('loadedmetadata', onLoaded)
-				drawAndResolve()
-			}
-			video.addEventListener('loadedmetadata', onLoaded)
-			// fallback in case loadedmetadata doesn't fire quickly on some mobiles
-			setTimeout(() => {
-				if (!(video.videoWidth && video.videoHeight)) {
-					drawAndResolve()
-				}
-			}, 500)
-		}
-	})
+	}, "image/jpeg", 0.9)
+
 }
 
 const uploadSelfieToCheckin = async (docname) => {
+	const blob = await fetch(capturedImage.value).then(res => res.blob())
+	const file = new File([blob], "selfie.jpg", { type: "image/jpeg" })
+
+	const formData = new FormData()
+	formData.append("file", file)
+	formData.append("is_private", "0")
+	formData.append("doctype", "Employee Checkin")
+	formData.append("fieldname", "image")
+	formData.append("docname", docname) // ✅ actual check-in document name
+
 	try {
-		let fileToUpload = capturedFile.value
-		// fallback: if file wasn't stored for some reason, try to fetch blob from object URL
-		if (!fileToUpload && capturedImage.value) {
-			try {
-				const blob = await fetch(capturedImage.value).then(res => res.blob())
-				fileToUpload = new File([blob], "selfie.jpg", { type: blob.type || "image/jpeg" })
-			} catch (err) {
-				console.error("Failed to obtain blob from capturedImage URL:", err)
-			}
-		}
-
-		if (!fileToUpload) return
-
-		const formData = new FormData()
-		formData.append("file", fileToUpload)
-		formData.append("is_private", "0")
-		formData.append("doctype", "Employee Checkin")
-		formData.append("fieldname", "image")
-		formData.append("docname", docname)
-
-		try {
-			await axios.post("/api/method/upload_file", formData, {
-				headers: { "Content-Type": "multipart/form-data" }
-			})
-			// console.log("Selfie uploaded for", docname)
-		} catch (err) {
-			console.error("Failed to upload selfie:", err)
-			// swallow upload errors to avoid blocking the check-in flow
-		}
+		await axios.post("/api/method/upload_file", formData, {
+			headers: { "Content-Type": "multipart/form-data" }
+		})
+		console.log("Selfie uploaded for", docname)
 	} catch (err) {
-		console.error("Unexpected error in uploadSelfieToCheckin:", err)
+		console.error("Failed to upload selfie:", err)
+		toast({
+			title: __("Upload Error"),
+			text: __("Failed to upload selfie."),
+			icon: "alert-circle",
+			position: "bottom-center",
+			iconClasses: "text-red-500",
+		})
 	}
 }
 
 </script>
   
   <style>
+  
+  
+  
+  
+  
+  
+  
   #img{
 	  border-radius: 10%;
 	  height: 84%;

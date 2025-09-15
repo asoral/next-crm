@@ -83,3 +83,13 @@ def get_quotations_with_items(opportunity=None, lead=None):
 # @frappe.whitelist(allow_guest=True)
 # def get_lms_setting(field):
 # 	return frappe.get_cached_value("LMS Settings", None, field)
+
+
+@frappe.whitelist()
+def get_hr_settings() -> dict:
+	settings = frappe.db.get_singles_dict("HR Settings", cast=True)
+	print("settingss-------------->", settings)
+	return frappe._dict(
+		allow_employee_checkin_from_mobile_app=settings.allow_employee_checkin_from_mobile_app,
+		allow_geolocation_tracking=settings.allow_geolocation_tracking,
+	)
