@@ -321,13 +321,13 @@ const uploadSelfieToCheckin = async (docname) => {
 		console.log("Selfie uploaded for", docname)
 	} catch (err) {
 		console.error("Failed to upload selfie:", err)
-		toast({
-			title: __("Upload Error"),
-			text: __("Failed to upload selfie."),
-			icon: "alert-circle",
-			position: "bottom-center",
-			iconClasses: "text-red-500",
-		})
+		// toast({
+		// 	title: __("Upload Error"),
+		// 	text: __("Failed to upload selfie."),
+		// 	icon: "alert-circle",
+		// 	position: "bottom-center",
+		// 	iconClasses: "text-red-500",
+		// })
 	}
 }
 
