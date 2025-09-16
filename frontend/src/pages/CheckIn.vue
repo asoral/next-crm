@@ -214,7 +214,7 @@ const submitLog = async (logType) => {
 	}
 
 	// 🔸 Auto-capture selfie before submission
-	await capturePhoto()
+	// await capturePhoto()
 
 	checkins.insert.submit({
 		employee: CheckEmployee.value.name,
@@ -224,10 +224,9 @@ const submitLog = async (logType) => {
 		longitude: longitude.value,
 	}, {
 		onSuccess: async (doc) => {
-			// 🔸 Upload captured selfie
-			if (capturedImage.value) {
-				await uploadSelfieToCheckin(doc.name)
-			}
+			// if (capturedImage.value) {
+			// 	await uploadSelfieToCheckin(doc.name)
+			// }
 
 			modalController.dismiss()
 			toast({
@@ -312,7 +311,7 @@ const uploadSelfieToCheckin = async (docname) => {
 	formData.append("is_private", "0")
 	formData.append("doctype", "Employee Checkin")
 	formData.append("fieldname", "image")
-	formData.append("docname", docname) // ✅ actual check-in document name
+	formData.append("docname", docname) 
 
 	try {
 		await axios.post("/api/method/upload_file", formData, {

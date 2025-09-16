@@ -54,26 +54,26 @@
         </div>
 
 
-<!-- <div>
-  <FormControl
-    label="Create Event For"
-    type="select"
-    v-model="selectedRefType"
-    :options="['Lead', 'Opportunity', 'Customer']"
-    :placeholder="__('Select Type')"
-  />
-</div>
-
-<div  class="mt-2">
-  <Link
-    v-model="selectedRefName"
-    :doctype="selectedRefType"
-    :placeholder="`Select ${selectedRefType}`"
-    :hideMe="true"
-    :options="formatRefLabel"
-  />
-</div> -->
-
+        <div>
+          <FormControl
+            label="Create Event For"
+            type="select"
+            v-model="selectedRefType"
+            :options="['Lead', 'Opportunity', 'Customer']"
+            :placeholder="__('Select Type')"
+          />
+        </div>
+        
+        <div v-if="selectedRefType" class="mt-2">
+          <Link
+            v-model="selectedRefName"
+            :doctype="selectedRefType"
+            :placeholder="`Select ${selectedRefType}`"
+            :hideMe="true"
+            :options="formatRefLabel"
+          />
+        </div>
+        
 
         <div>
           <div class="mb-1.5 text-xs text-ink-gray-5">
@@ -316,29 +316,33 @@ async function updateEvent() {
   _event.value.assigned_by = getUser().name
 
   try {
+    // -------- UPDATE CASE --------
     if (_event.value.name) {
       _event.value.event_participants = [
-  ..._event.value.event_participants.filter(
-    (p) =>
-      !['Lead', 'Opportunity', 'Customer'].includes(p.reference_doctype) &&
-      (p.reference_doctype !== 'User' || p.reference_docname !== 'Guest')
-  ),
+        // keep existing participants that are not Lead/Opportunity/Customer
+        ..._event.value.event_participants.filter(
+          (p) =>
+            !['Lead', 'Opportunity', 'Customer'].includes(p.reference_doctype) &&
+            (p.reference_doctype !== 'User' || p.reference_docname !== 'Guest')
+        ),
 
-  ...(selectedRefType.value && selectedRefName.value
-    ? [
-        {
-          reference_doctype: selectedRefType.value,
-          reference_docname: selectedRefName.value,
-        },
+        // add new reference participant if selected
+        ...(selectedRefType.value && selectedRefName.value
+          ? [
+              {
+                reference_doctype: selectedRefType.value,
+                reference_docname: selectedRefName.value,
+              },
+            ]
+          : []),
+
+        // add participant emails
+        ...event_participants.value.map((email) => ({
+          reference_doctype: 'User',
+          reference_docname: 'Guest',
+          email: email,
+        })),
       ]
-    : []),
-
-  ...event_participants.value.map((email) => ({
-    reference_doctype: 'User',
-    reference_docname: 'Guest',
-    email: email,
-  })),
-]
 
       let d = await call('frappe.client.set_value', {
         doctype: 'Event',
@@ -351,11 +355,12 @@ async function updateEvent() {
         icon: 'check',
         iconClasses: 'text-ink-green-3',
       })
-    }else {
+
+    // -------- CREATE CASE --------
+    } 
+else {
   let doc = {
     doctype: 'Event',
-    reference_type: selectedRefType.value || props.doctype,
-    reference_name: selectedRefName.value || props.doc || null,
     event_participants: [
       ...(selectedRefType.value && selectedRefName.value
         ? [
@@ -381,7 +386,7 @@ async function updateEvent() {
     ..._event.value,
   }
 
-  let d = await call('frappe.client.insert', { doc: doc })
+  let d = await call('frappe.client.insert', { doc })
   if (d.name) {
     capture('event_created')
     events.value.reload()
@@ -394,7 +399,8 @@ async function updateEvent() {
   })
 }
 
-const refType = selectedRefType.value || props.doctype
+    // -------- UPDATE last_modified of reference doc --------
+    const refType = selectedRefType.value || props.doctype
     const refName = selectedRefName.value || props.doc
     if (refType && refName) {
       await call('frappe.client.set_value', {
@@ -406,6 +412,7 @@ const refType = selectedRefType.value || props.doctype
       })
     }
 
+    // -------- Reset dialog if needed --------
     if (
       (_event.value.status === 'Closed' || _event.value.status === 'Completed') &&
       createAnother.value
@@ -430,6 +437,7 @@ const refType = selectedRefType.value || props.doctype
     } else {
       show.value = false
     }
+
   } catch (error) {
     createToast({
       title: __(`Error ${editMode.value ? 'updating' : 'adding'} Event`),
@@ -439,6 +447,7 @@ const refType = selectedRefType.value || props.doctype
     })
   }
 }
+
 
 async function render() {
   editMode.value = false
