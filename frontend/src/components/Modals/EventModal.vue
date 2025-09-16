@@ -54,7 +54,7 @@
         </div>
 
 
-        <div>
+        <!-- <div>
           <FormControl
             label="Create Event For"
             type="select"
@@ -72,7 +72,7 @@
             :hideMe="true"
             :options="formatRefLabel"
           />
-        </div>
+        </div> -->
         
 
         <div>
