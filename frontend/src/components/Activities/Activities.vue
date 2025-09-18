@@ -1,6 +1,6 @@
 <template>
   <ActivityHeader
-  v-if="title !== 'Quotation'"
+    v-if="title !== 'Quotation'"
     v-model="tabIndex"
     v-model:showWhatsappTemplates="showWhatsappTemplates"
     v-model:showFilesUploader="showFilesUploader"
@@ -370,6 +370,7 @@ import FilesUploader from '@/components/FilesUploader/FilesUploader.vue'
 import { timeAgo, dateFormat, dateTooltipFormat, secondsToDuration, startCase } from '@/utils'
 import { globalStore } from '@/stores/global'
 import { usersStore } from '@/stores/users'
+import { isMobileView } from '@/composables/settings'
 
 import { whatsappEnabled } from '@/composables/settings'
 import { capture } from '@/telemetry'

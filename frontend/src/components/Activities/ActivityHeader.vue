@@ -54,7 +54,7 @@
         <span>{{ __('New Message') }}</span>
       </Button>
     </div>
-    <Dropdown v-else :options="defaultActions" @click.stop>
+    <Dropdown v-else-if="!isMobileView" :options="defaultActions" @click.stop>
       <template v-slot="{ open }">
         <Button variant="solid" class="flex items-center gap-1">
           <template #prefix>
@@ -82,6 +82,7 @@ import { globalStore } from '@/stores/global'
 import { whatsappEnabled, callEnabled } from '@/composables/settings'
 import { Dropdown } from 'frappe-ui'
 import { computed, h } from 'vue'
+import { isMobileView } from '@/composables/settings'
 
 const props = defineProps({
   tabs: Array,
