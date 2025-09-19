@@ -4,12 +4,20 @@
       <div class="flex items-center justify-between gap-2 overflow-x-auto">
         <div class="flex gap-2">
           <input
-          v-if="doctype === 'Customer'"
-          v-model="customerSearch"
-          type="text"
-          placeholder="Search Customer"
-          class="border rounded px-2 py-1 text-sm w-[185px]"
-        />
+  v-if="props.doctype === 'Customer'"
+  v-model="customerSearch"
+  type="text"
+  placeholder="Search Customer"
+  class="border rounded px-2 py-1 text-sm w-[185px]"
+/>
+
+<input
+  v-else-if="props.doctype === 'Lead'"
+  v-model="customerSearch"
+  type="text"
+  placeholder="Search Lead"
+  class="border rounded px-2 py-1 text-sm w-[185px]"
+/>
           <Filter v-model="list" :doctype="doctype" :default_filters="filters" @update="updateFilter" />
 
           <GroupBy v-if="route.params.viewType === 'group_by'" v-model="list" :doctype="doctype"
@@ -1260,8 +1268,25 @@ const applyCustomerSearch = useDebounceFn((val) => {
   updateFilter(filters)
 }, 400)
 
+const applyLeadSearch = useDebounceFn((val) => {
+  let filters = { ...list.value.params.filters }
+console.log('filters', filters)
+  if (val && val.trim() !== '') {
+    filters['company_name'] = ['like', `%${val}%`]
+  } else {
+    delete filters['company_name']
+  }
+
+  updateFilter(filters)
+}, 400)
+
 watch(customerSearch, (val) => {
-  applyCustomerSearch(val)
+  if (props.doctype === 'Customer') {
+    applyCustomerSearch(val)
+  } else if (props.doctype === 'Lead') {
+    applyLeadSearch(val)
+  }
 })
+
 
 </script>
