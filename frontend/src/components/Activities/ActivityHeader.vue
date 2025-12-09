@@ -1,51 +1,62 @@
 <template>
   <div class="mx-4 my-3 flex items-center justify-between text-lg font-medium sm:mx-10 sm:mb-4 sm:mt-8">
+    <!-- Title -->
     <div class="flex h-8 items-center text-xl font-semibold text-ink-gray-8">
       {{ __(title) }}
     </div>
-    <Button v-if="title == 'Emails'" variant="solid" @click="emailBox.show = true">
+
+    <!-- Conditional Action Buttons -->
+    <Button v-if="title === 'Emails'" variant="solid" @click="emailBox.show = true">
       <template #prefix>
         <FeatherIcon name="plus" class="h-4 w-4" />
       </template>
       <span>{{ __('New Email') }}</span>
     </Button>
-    <Button v-else-if="title == 'Comments'" variant="solid" @click="emailBox.showComment = true">
+
+    <Button v-else-if="title === 'Comments'" variant="solid" @click="emailBox.showComment = true">
       <template #prefix>
         <FeatherIcon name="plus" class="h-4 w-4" />
       </template>
       <span>{{ __('New Comment') }}</span>
     </Button>
-    <Button v-else-if="title == 'Calls'" variant="solid" @click="makeCall(doc.data.mobile_no)">
+
+    <Button v-else-if="title === 'Calls'" variant="solid" @click="makeCall(doc.data.mobile_no)">
       <template #prefix>
         <PhoneIcon class="h-4 w-4" />
       </template>
       <span>{{ __('Make a Call') }}</span>
     </Button>
-    <Button v-else-if="title == 'Notes'" variant="solid" @click="modalRef.showNote()">
+
+    <Button v-else-if="title === 'Notes'" variant="solid" @click="modalRef.showNote()">
       <template #prefix>
         <FeatherIcon name="plus" class="h-4 w-4" />
       </template>
       <span>{{ __('New Note') }}</span>
     </Button>
-    <Button v-else-if="title == 'ToDos'" variant="solid" @click="modalRef.showToDo()">
+
+    <Button v-else-if="title === 'ToDos'" variant="solid" @click="modalRef.showToDo()">
       <template #prefix>
         <FeatherIcon name="plus" class="h-4 w-4" />
       </template>
       <span>{{ __('New ToDo') }}</span>
     </Button>
-    <Button v-else-if="title == 'Events'" variant="solid" @click="modalRef.showEvent()">
+
+    <Button v-else-if="title === 'Events'" variant="solid" @click="modalRef.showEvent()">
       <template #prefix>
         <FeatherIcon name="plus" class="h-4 w-4" />
       </template>
       <span>{{ __('New Event') }}</span>
     </Button>
-    <Button v-else-if="title == 'Attachments'" variant="solid" @click="showFilesUploader = true">
+
+    <Button v-else-if="title === 'Attachments'" variant="solid" @click="showFilesUploader = true">
       <template #prefix>
         <FeatherIcon name="plus" class="h-4 w-4" />
       </template>
       <span>{{ __('Upload Attachment') }}</span>
     </Button>
-    <div class="flex gap-2 shrink-0" v-else-if="title == 'WhatsApp'">
+
+    <!-- WhatsApp Action Buttons -->
+    <div class="flex gap-2 shrink-0" v-else-if="title === 'WhatsApp'">
       <Button :label="__('Send Template')" @click="showWhatsappTemplates = true" />
       <Button variant="solid" @click="whatsappBox.show()">
         <template #prefix>
@@ -54,6 +65,8 @@
         <span>{{ __('New Message') }}</span>
       </Button>
     </div>
+
+    <!-- Fallback Dropdown -->
     <Dropdown v-else-if="!isMobileView" :options="defaultActions" @click.stop>
       <template v-slot="{ open }">
         <Button variant="solid" class="flex items-center gap-1">
@@ -69,6 +82,7 @@
     </Dropdown>
   </div>
 </template>
+
 <script setup>
 import Email2Icon from '@/components/Icons/Email2Icon.vue'
 import CommentIcon from '@/components/Icons/CommentIcon.vue'
@@ -78,11 +92,10 @@ import ToDoIcon from '@/components/Icons/ToDoIcon.vue'
 import EventIcon from '@/components/Icons/EventIcon.vue'
 import AttachmentIcon from '@/components/Icons/AttachmentIcon.vue'
 import WhatsAppIcon from '@/components/Icons/WhatsAppIcon.vue'
-import { globalStore } from '@/stores/global'
-import { whatsappEnabled, callEnabled } from '@/composables/settings'
 import { Dropdown } from 'frappe-ui'
+import { globalStore } from '@/stores/global'
+import { whatsappEnabled, callEnabled, isMobileView } from '@/composables/settings'
 import { computed, h } from 'vue'
-import { isMobileView } from '@/composables/settings'
 
 const props = defineProps({
   tabs: Array,
@@ -100,7 +113,7 @@ const showWhatsappTemplates = defineModel('showWhatsappTemplates')
 const showFilesUploader = defineModel('showFilesUploader')
 
 const defaultActions = computed(() => {
-  let actions = [
+  const actions = [
     {
       icon: h(Email2Icon, { class: 'h-4 w-4' }),
       label: __('New Email'),
@@ -145,10 +158,16 @@ const defaultActions = computed(() => {
       condition: () => whatsappEnabled.value,
     },
   ]
-  return actions.filter((action) => (action.condition ? action.condition() : true))
+
+  return actions.filter((a) => (a.condition ? a.condition() : true))
 })
 
 function getTabIndex(name) {
   return props.tabs.findIndex((tab) => tab.name === name)
 }
 </script>
+
+<style scoped>
+/* Optional minor layout refinements */
+</style>
+                                                                                                      

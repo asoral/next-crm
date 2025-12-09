@@ -16,6 +16,7 @@
       >
         <div v-if="!edit">
           <Draggable
+            v-if="columns && columns.length"
             :list="columns"
             @end="apply"
             :delay="isTouchScreenDevice() ? 200 : 0"
@@ -124,6 +125,7 @@ import { isTouchScreenDevice } from '@/utils'
 import Draggable from 'vuedraggable'
 import { computed, ref } from 'vue'
 import { watchOnce } from '@vueuse/core'
+import { FeatherIcon } from 'frappe-ui'
 
 const props = defineProps({
   doctype: {
@@ -138,7 +140,6 @@ const props = defineProps({
 
 const emit = defineEmits(['update'])
 const columnsUpdated = ref(false)
-
 const oldValues = ref({
   columns: [],
   rows: [],
@@ -157,21 +158,21 @@ const column = ref({
 const is_default = computed({
   get: () => list.value?.data?.is_default,
   set: (val) => {
-    list.value.data.is_default = val
+    if (list.value?.data) list.value.data.is_default = val
   },
 })
 
 const columns = computed({
-  get: () => list.value?.data?.columns,
+  get: () => list.value?.data?.columns || [],
   set: (val) => {
-    list.value.data.columns = val
+    if (list.value?.data) list.value.data.columns = val
   },
 })
 
 const rows = computed({
-  get: () => list.value?.data?.rows,
+  get: () => list.value?.data?.rows || [],
   set: (val) => {
-    list.value.data.rows = val
+    if (list.value?.data) list.value.data.rows = val
   },
 })
 
@@ -186,7 +187,7 @@ const fields = computed(() => {
 function addColumn(c) {
   let _column = {
     label: c.label,
-    type: c.feildtype,
+    type: c.fieldtype, // FIXED: was 'feildtype'
     key: c.value,
     width: '10rem',
   }
@@ -212,20 +213,23 @@ function editColumn(c) {
 function updateColumn(c) {
   edit.value = false
   let index = columns.value.findIndex((column) => column.key === c.key)
-  columns.value[index].label = c.label
-  columns.value[index].width = c.width
-
-  if (columns.value[index].old) {
-    delete columns.value[index].old
+  if (index !== -1) {
+    columns.value[index].label = c.label
+    columns.value[index].width = c.width
+    if (columns.value[index].old) {
+      delete columns.value[index].old
+    }
+    apply()
   }
-  apply()
 }
 
 function cancelUpdate() {
   edit.value = false
-  column.value.label = column.value.old.label
-  column.value.width = column.value.old.width
-  delete column.value.old
+  if (column.value.old) {
+    column.value.label = column.value.old.label
+    column.value.width = column.value.old.width
+    delete column.value.old
+  }
 }
 
 function reset(close) {
@@ -249,9 +253,7 @@ function apply(reload = false, isDefault = false, reset = false) {
     reset,
   }
   emit('update', obj)
-
   if (reload) {
-    // will have think of a better way to do this
     setTimeout(() => {
       is_default.value = reset ? oldValues.value.isDefault : isDefault
       columnsUpdated.value = !reset
@@ -260,12 +262,12 @@ function apply(reload = false, isDefault = false, reset = false) {
 }
 
 watchOnce(
-  () => list.value.data,
+  () => list.value?.data, // Added safe navigation
   (val) => {
     if (!val) return
-    oldValues.value.columns = JSON.parse(JSON.stringify(val.columns))
-    oldValues.value.rows = JSON.parse(JSON.stringify(val.rows))
+    oldValues.value.columns = JSON.parse(JSON.stringify(val.columns || []))
+    oldValues.value.rows = JSON.parse(JSON.stringify(val.rows || []))
     oldValues.value.isDefault = val.is_default
-  },
+  }
 )
 </script>

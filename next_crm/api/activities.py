@@ -1,6 +1,7 @@
 import json
 
 import frappe
+from frappe import _
 from bs4 import BeautifulSoup
 from frappe import _
 from frappe.desk.form.load import get_docinfo
@@ -645,57 +646,106 @@ def parse_attachment_log(html, type):
     }
 
 
-@frappe.whitelist()
-def delete_attachment(filename, doctype=None, docname=None):
+def _norm_token(x) -> str:
+    """Return a trimmed File.name string from various inputs."""
+    if x is None:
+        return ""
+    if isinstance(x, str):
+        return x.strip()
+    if isinstance(x, dict):
+        # common shape from UI: { name: '...', file_url: '...' }
+        for key in ("name", "file", "filename", "value"):
+            if key in x and isinstance(x[key], str):
+                return x[key].strip()
+        # last resort: stringified
+        return str(x).strip()
+    # numbers / other types
+    return str(x).strip()
+
+@frappe.whitelist(methods=["POST"])
+def delete_attachment(
+    file: str | dict | None = None,
+    filename: str | dict | None = None,
+    file_url: str | dict | None = None,
+    doctype: str | None = None,
+    docname: str | None = None,
+):
     """
-    Delete a file attachment by its File.name. If doctype & docname are provided,
-    also remove its reference from CRM Notes' custom_note_attachments child_table.
-
-    Args:
-        filename (str): File Doc's `name` (not file_url or file_name)
-        doctype (str, optional): Parent DocType like "Opportunity"
-        docname (str, optional): Parent docname like "OPTY-0001"
+    Delete a File record (and the physical file). Accepts:
+      - file: File.name (preferred) or a dict containing {"name": ...}
+      - filename: alias for 'file'
+      - file_url: /files/xyz.png or /private/files/xyz.png (string or dict with file_url)
+    If doctype/docname are provided, verifies the file belongs to that document.
+    Permission: allow if user has Delete on File OR Write on the parent document.
     """
-    deleted = False
-
-    if doctype and docname:
-        notes = frappe.get_all(
-            "CRM Note",
-            filters={"parenttype": doctype, "parent": docname},
-            fields=["name"],
-        )
-
-        for note in notes:
-            note_doc = frappe.get_doc("CRM Note", note.name)
-            original_count = len(note_doc.custom_note_attachments)
-
-            updated_attachments = [
-                row
-                for row in note_doc.custom_note_attachments
-                if row.filename != filename
-            ]
-
-            if len(updated_attachments) != original_count:
-                note_doc.set("custom_note_attachments", updated_attachments)
-                note_doc.save()
-                deleted = True
-
     try:
-        frappe.delete_doc("File", filename)
-        deleted = True
-    except frappe.DoesNotExistError:
-        frappe.throw(_("File with ID '{0}' not found.").format(filename))
-    except frappe.LinkExistsError:
-        frappe.throw(
-            _("Cannot delete file because it's still linked with another document.")
-        )
-    except Exception as e:
-        frappe.log_error(f"Failed to delete file: {e}", "Delete Attachment Error")
-        frappe.throw(_("An unexpected error occurred while deleting the file."))
+        # Normalize inputs defensively
+        fid = _norm_token(file) or _norm_token(filename)
+        furl = _norm_token(file_url)
 
-    if deleted:
-        return {"message": _("File deleted successfully.")}
-    else:
-        frappe.throw(
-            _("File was not deleted. Possibly already removed or not linked correctly.")
+        # Debug once: if still empty we want to know what came in
+        if not fid and not furl:
+            frappe.errprint({
+                "where": "delete_attachment",
+                "received": {
+                    "file": file, "filename": filename, "file_url": file_url,
+                    "doctype": doctype, "docname": docname, "user": frappe.session.user
+                },
+                "note": "Both fid and file_url empty after normalization"
+            })
+            frappe.throw(_("Provide a valid 'file' (or 'filename') or 'file_url'."))
+
+        # Resolve by file_url (optionally constrained by parent)
+        if not fid and furl:
+            filters = {"file_url": furl}
+            if doctype:
+                filters["attached_to_doctype"] = doctype
+            if docname:
+                filters["attached_to_name"] = docname
+            fid = frappe.db.get_value("File", filters, "name") or frappe.db.get_value(
+                "File", {"file_url": furl}, "name"
+            )
+
+        if not fid:
+            frappe.throw(_("File not found."), frappe.DoesNotExistError)
+
+        fdoc = frappe.get_doc("File", fid)
+
+        # If caller specifies a parent, ensure the file actually belongs to it
+        if doctype and docname:
+            if (fdoc.attached_to_doctype != doctype) or (fdoc.attached_to_name != docname):
+                frappe.throw(
+                    _("File does not belong to {0} {1}.").format(doctype, docname)
+                )
+
+        # Permission: allow if user can delete File OR has write on the parent doc
+        has_file_delete = fdoc.has_permission("delete")
+        has_parent_write = False
+
+        if fdoc.attached_to_doctype and fdoc.attached_to_name:
+            try:
+                parent = frappe.get_doc(fdoc.attached_to_doctype, fdoc.attached_to_name)
+                has_parent_write = parent.has_permission("write")
+            except Exception:
+                has_parent_write = False
+
+        if not (has_file_delete or has_parent_write):
+            frappe.throw(_("Not permitted to delete this file."), frappe.PermissionError)
+
+        # If user lacks File delete but has parent write, use ignore_permissions safely
+        use_ignore = (not has_file_delete) and has_parent_write
+        fdoc.delete(ignore_permissions=use_ignore)
+
+        return {"ok": True, "name": fdoc.name}
+
+    except frappe.PermissionError:
+        raise
+    except Exception:
+        frappe.log_error(
+            title="delete_attachment failed",
+            message=(
+                f"payload={{file:{file}, filename:{filename}, file_url:{file_url}, "
+                f"doctype:{doctype}, docname:{docname}}}\n{frappe.get_traceback()}"
+            ),
         )
+        frappe.throw(_("Failed to delete the attachment. See error log."))

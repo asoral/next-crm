@@ -12,45 +12,46 @@
       ],
     }"
   >
-  <template #body-title>
-    <div class="flex flex-col gap-1">
-      <div class="flex items-center gap-3">
-        <h3 class="text-2xl font-semibold leading-6 text-ink-gray-9">
-          {{ editMode ? __('Edit ToDo') : __('Create ToDo') }}
-        </h3>
-        <Button
-          v-if="todo?.reference_name"
-          size="sm"
-          :label="todo.reference_type == 'Opportunity' ? __('Open Opportunity') : __('Open Lead')"
-          @click="redirect()"
+    <template #body-title>
+      <div class="flex flex-col gap-1">
+        <div class="flex items-center gap-3">
+          <h3 class="text-2xl font-semibold leading-6 text-ink-gray-9">
+            {{ editMode ? __('Edit ToDo') : __('Create ToDo') }}
+          </h3>
+          <Button
+            v-if="todo?.reference_name"
+            size="sm"
+            :label="todo.reference_type == 'Opportunity' ? __('Open Opportunity') : __('Open Lead')"
+            @click="redirect()
+            "
+          >
+            <template #suffix>
+              <ArrowUpRightIcon class="h-4 w-4" />
+            </template>
+          </Button>
+        </div>
+        <div
+          v-if="referenceTitle"
+          class="text-base leading-6 text-ink-gray-9 mt-1"
+          :title="referenceTitle"
         >
-          <template #suffix>
-            <ArrowUpRightIcon class="h-4 w-4" />
-          </template>
-        </Button>
+          {{ referenceTitle }}
+        </div>
       </div>
-      <div
-        v-if="referenceTitle"
-        class="text-base leading-6 text-ink-gray-9 mt-1"
-        :title="referenceTitle"
-      >
-        {{ referenceTitle }}
-      </div>
-    </div>
-  </template>
-  
+    </template>
+
     <template #body-content>
       <div class="flex flex-col gap-4">
         <div>
           <FormControl
-          ref="custom_title"
-          :label="__('Title')"
-          v-model="_todo.custom_title"
-          :placeholder="__('Call with John Doe')"
-          :error="!_todo.custom_title && showError"
-        />
-        
+            ref="custom_title"
+            :label="__('Title')"
+            v-model="_todo.custom_title"
+            :placeholder="__('Call with John Doe')"
+            :error="!_todo.custom_title && showError"
+          />
         </div>
+
         <div>
           <div class="mb-1.5 text-xs text-ink-gray-5">
             {{ __('Description') }}
@@ -65,6 +66,7 @@
             :placeholder="__('Took a call with John Doe and discussed the new project.')"
           />
         </div>
+
         <div class="flex flex-wrap items-center gap-2">
           <Dropdown :options="todoStatusOptions(updateToDoStatus)">
             <Button :label="_todo.status" class="w-full justify-between">
@@ -73,6 +75,7 @@
               </template>
             </Button>
           </Dropdown>
+
           <Link
             class="form-control"
             :value="getUser(_todo.allocated_to).full_name"
@@ -95,12 +98,14 @@
               </Tooltip>
             </template>
           </Link>
+
           <DatePicker
             class="datepicker w-36"
             v-model="_todo.date"
             :placeholder="__('01/04/2024')"
             input-class="border-none"
           />
+
           <TextInput
             v-if="fromTime"
             type="datetime-local"
@@ -111,6 +116,7 @@
             v-model="_todo.custom_from_time"
             class="datepicker w-fit border-none"
           />
+
           <TextInput
             v-if="toTime"
             type="datetime-local"
@@ -121,6 +127,7 @@
             v-model="_todo.custom_to_time"
             class="datepicker w-fit border-none"
           />
+
           <Dropdown :options="todoPriorityOptions(updateToDoPriority)">
             <Button :label="_todo.priority" class="w-full justify-between">
               <template #prefix>
@@ -129,20 +136,20 @@
             </Button>
           </Dropdown>
         </div>
-<div v-if="editMode" class="flex items-center gap-2">
-  <FormControl
-    class="form-control"
-    type="checkbox"
-    v-model="createAnother"
-  />
-  <label
-    class="text-sm text-ink-gray-5"
-    @click="createAnother = !createAnother"
-  >
-    {{ __('Create New ToDo') }}
-  </label>
-</div>
 
+        <div v-if="editMode" class="flex items-center gap-2">
+          <FormControl
+            class="form-control"
+            type="checkbox"
+            v-model="createAnother"
+          />
+          <label
+            class="text-sm text-ink-gray-5"
+            @click="createAnother = !createAnother"
+          >
+            {{ __('Create New ToDo') }}
+          </label>
+        </div>
       </div>
     </template>
   </Dialog>
@@ -204,6 +211,9 @@ const _todo = ref({
   reference_name: null,
 })
 
+const showError = ref(false)
+const referenceTitle = ref('')
+
 function updateToDoStatus(status) {
   _todo.value.status = status
 }
@@ -235,58 +245,56 @@ function redirect() {
   }
   router.push({ name: name, params: params })
 }
-const showError = ref(false)
-
 
 async function updateToDo() {
   if (!_todo.value.allocated_to) {
     _todo.value.allocated_to = getUser().name
   }
   _todo.value.assigned_by = getUser().name
+
   if (!_todo.value.custom_title || !_todo.value.custom_title) {
-  createToast({
-    title: __(`Error ${editMode.value ? 'updating' : 'adding'} ToDo`),
-    text: __('ToDo title is required.'),
-    icon: 'x',
-    iconClasses: 'text-ink-red-4',
-  })
-  return
-}
+    createToast({
+      title: __(`Error ${editMode.value ? 'updating' : 'adding'} ToDo`),
+      text: __('ToDo title is required.'),
+      icon: 'x',
+      iconClasses: 'text-ink-red-4',
+    })
+    return
+  }
 
-if (!_todo.value.description || !_todo.value.description) {
-  createToast({
-    title: __(`Error ${editMode.value ? 'updating' : 'adding'} ToDo`),
-    text: __('ToDo must have either a title or a description.'),
-    icon: 'x',
-    iconClasses: 'text-ink-red-4',
-  })
-  return
-}
-
+  if (!_todo.value.description || !_todo.value.description) {
+    createToast({
+      title: __(`Error ${editMode.value ? 'updating' : 'adding'} ToDo`),
+      text: __('ToDo must have either a title or a description.'),
+      icon: 'x',
+      iconClasses: 'text-ink-red-4',
+    })
+    return
+  }
 
   try {
     if (_todo.value.name) {
+      // Update existing ToDo
       let d = await call('frappe.client.set_value', {
         doctype: 'ToDo',
         name: _todo.value.name,
         fieldname: _todo.value,
       })
       if (d.name) {
-        todos.value.reload()
+        // 🔧 safe reload – only if parent passed reloadToDos
+        todos.value?.reload?.()
+
         const refType = _todo.value.reference_type || props.doctype
-const refName = _todo.value.reference_name || props.doc
-if (refType && refName) {
-  await call('frappe.client.set_value', {
-    doctype: refType,
-    name: refName,
-    fieldname: {
-      last_modified: new Date().toISOString(),
-    },
-  })
-}
-
-       
-
+        const refName = _todo.value.reference_name || props.doc
+        if (refType && refName) {
+          await call('frappe.client.set_value', {
+            doctype: refType,
+            name: refName,
+            fieldname: {
+              last_modified: new Date().toISOString(),
+            },
+          })
+        }
       }
       createToast({
         title: __('Todo updated successfully'),
@@ -294,6 +302,7 @@ if (refType && refName) {
         iconClasses: 'text-ink-green-3',
       })
     } else {
+      // Create new ToDo
       let d = await call('frappe.client.insert', {
         doc: {
           doctype: 'ToDo',
@@ -304,25 +313,24 @@ if (refType && refName) {
       })
       if (d.name) {
         capture('todo_created')
-        todos.value.reload()
+        // 🔧 safe reload – only if parent passed reloadToDos
+        todos.value?.reload?.()
         emit('after')
+
         const refType = _todo.value.reference_type || props.doctype
-const refName = _todo.value.reference_name || props.doc
-console.log('refenrece_type', refType)
-console.log('refenrece_name', refName)
+        const refName = _todo.value.reference_name || props.doc
+        console.log('refenrece_type', refType)
+        console.log('refenrece_name', refName)
 
-
-if (refType && refName) {
-  await call('frappe.client.set_value', {
-    doctype: refType,
-    name: refName,
-    fieldname: {
-      last_modified: new Date().toISOString(),
-    },
-  })
-}
-
-
+        if (refType && refName) {
+          await call('frappe.client.set_value', {
+            doctype: refType,
+            name: refName,
+            fieldname: {
+              last_modified: new Date().toISOString(),
+            },
+          })
+        }
       }
       createToast({
         title: __('Todo created successfully'),
@@ -330,25 +338,26 @@ if (refType && refName) {
         iconClasses: 'text-ink-green-3',
       })
     }
+
     if (_todo.value.status === 'Closed' && createAnother.value) {
-  nextTick(() => {
-    editMode.value = false
-    _todo.value = {
-      custom_title: '',
-      description: '',
-      allocated_to: '',
-      assigned_by: '',
-      date: '',
-      status: 'Open',
-      priority: 'Medium',
-      reference_type: props.doctype,
-      reference_name: props.doc || null,
+      nextTick(() => {
+        editMode.value = false
+        _todo.value = {
+          custom_title: '',
+          description: '',
+          allocated_to: '',
+          assigned_by: '',
+          date: '',
+          status: 'Open',
+          priority: 'Medium',
+          reference_type: props.doctype,
+          reference_name: props.doc || null,
+        }
+        show.value = true
+      })
+    } else {
+      show.value = false
     }
-    show.value = true
-  })
-} else {
-  show.value = false
-}
   } catch (error) {
     createToast({
       title: __(`Error ${editMode.value ? 'updating' : 'adding'} ToDo`),
@@ -358,8 +367,6 @@ if (refType && refName) {
     })
   }
 }
-const referenceTitle = ref('')
-
 
 async function render() {
   editMode.value = false
@@ -392,16 +399,14 @@ async function render() {
           let customTitle = [
             doc.company_name || '',
             doc.first_name || '',
-            doc.last_name || ''
+            doc.last_name || '',
           ]
             .filter(Boolean)
             .join(' ')
             .trim()
 
           referenceTitle.value = customTitle || doc.title || doc.name
-        } 
-        
-        else if (refType === 'opportunity') {
+        } else if (refType === 'opportunity') {
           if (doc.opportunity_from === 'Lead' && doc.party_name) {
             try {
               const leadDoc = await call('frappe.client.get', {
@@ -411,7 +416,7 @@ async function render() {
               let customTitle = [
                 leadDoc.company_name || '',
                 leadDoc.first_name || '',
-                leadDoc.last_name || ''
+                leadDoc.last_name || '',
               ]
                 .filter(Boolean)
                 .join(' ')
@@ -425,9 +430,7 @@ async function render() {
           } else {
             referenceTitle.value = doc.title || doc.name
           }
-        } 
-        
-        else {
+        } else {
           referenceTitle.value = doc.title || doc.name
         }
       } catch (err) {
@@ -437,10 +440,6 @@ async function render() {
     }
   })
 }
-
-
-
-
 
 onMounted(() => show.value && render())
 

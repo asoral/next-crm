@@ -20,10 +20,16 @@ export function getMeta(doctype) {
         doctypeMeta[dtMeta.name] = dtMeta
       }
 
-      userSettings[doctype] = JSON.parse(res.user_settings)
+      try {
+        userSettings[doctype] = JSON.parse(res.user_settings)
+      } catch (e) {
+        // gracefully handle if user_settings is not JSON
+        userSettings[doctype] = {}
+      }
     },
   })
 
+  // If meta not loaded, fetch it
   if (!doctypeMeta[doctype] && !meta.loading) {
     meta.fetch()
   }
@@ -34,25 +40,51 @@ export function getMeta(doctype) {
   }
 
   function getFormattedFloat(fieldname, doc) {
-    let df = doctypeMeta[doctype]?.fields.find((f) => f.fieldname == fieldname)
-    let precision = df?.precision || null
-    return formatNumber(doc[fieldname], '', precision)
+    let df = doctypeMeta[doctype]?.fields?.find((f) => f.fieldname == fieldname)
+    let precision = df?.precision ?? null
+    return formatNumber(doc?.[fieldname], '', precision)
   }
 
-  function getFormattedCurrency(fieldname, doc) {
-    let currency = window.sysdefaults.currency || 'USD'
-    let df = doctypeMeta[doctype]?.fields.find((f) => f.fieldname == fieldname)
-    let precision = df?.precision || null
+  // new helper (frappe/develop): return numeric string with precision
+  function getFloatWithPrecision(fieldname, doc) {
+    let df = doctypeMeta[doctype]?.fields?.find((f) => f.fieldname == fieldname)
+    let precision = df?.precision ?? null
+    return formatNumber(doc?.[fieldname], '', precision)
+  }
+
+  // new helper (frappe/develop): currency with precision (raw number formatting)
+  function getCurrencyWithPrecision(fieldname, doc) {
+    let df = doctypeMeta[doctype]?.fields?.find((f) => f.fieldname == fieldname)
+    let precision = df?.precision ?? null
+    return formatCurrency(doc?.[fieldname], '', '', precision)
+  }
+
+  /**
+   * getFormattedCurrency(fieldname, doc, parentDoc = null)
+   *
+   * - Keeps previous behavior (HEAD) but also handles the develop change:
+   *   ability to look up currency field on parentDoc if present.
+   * - If df.options contains ":" (special format), we leave currency as default system currency.
+   */
+  function getFormattedCurrency(fieldname, doc, parentDoc = null) {
+    let currency = (window.sysdefaults && window.sysdefaults.currency) || 'USD'
+    let df = doctypeMeta[doctype]?.fields?.find((f) => f.fieldname == fieldname)
+    let precision = df?.precision ?? null
 
     if (df && df.options) {
-      if (df.options.indexOf(':') != -1) {
-        currency = currency
-      } else if (doc && doc[df.options]) {
+      // if options contain ":" then some special handling may be required;
+      // keep existing behavior (leave currency as system default)
+      if (typeof df.options === 'string' && df.options.indexOf(':') != -1) {
+        // nothing (keep currency as default)
+      } else if (doc && df.options && doc[df.options]) {
         currency = doc[df.options]
+      } else if (parentDoc && df.options && parentDoc[df.options]) {
+        // frappe/develop: fallback to parentDoc (useful for child tables)
+        currency = parentDoc[df.options]
       }
     }
 
-    return formatCurrency(doc[fieldname], '', currency, precision)
+    return formatCurrency(doc?.[fieldname], '', currency, precision)
   }
 
   function getGridSettings() {
@@ -67,7 +99,8 @@ export function getMeta(doctype) {
 
   function getFields(dt = null) {
     dt = dt || doctype
-    return doctypeMeta[dt]?.fields.map((f) => {
+    return doctypeMeta[dt]?.fields?.map((f) => {
+      // normalize Select options from newline string -> array of {label, value}
       if (f.fieldtype === 'Select' && typeof f.options === 'string') {
         f.options = f.options.split('\n').map((option) => {
           return {
@@ -83,6 +116,7 @@ export function getMeta(doctype) {
           })
         }
       }
+      // treat Link to User as a special 'User' fieldtype for UI convenience
       if (f.fieldtype === 'Link' && f.options == 'User') {
         f.fieldtype = 'User'
       }
@@ -126,6 +160,9 @@ export function getMeta(doctype) {
     getGridSettings,
     getGridViewSettings,
     saveUserSettings,
+    // expose both older & develop helpers so callers from either branch work
+    getFloatWithPrecision,
+    getCurrencyWithPrecision,
     getFormattedFloat,
     getFormattedPercent,
     getFormattedCurrency,

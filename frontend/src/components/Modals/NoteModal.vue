@@ -1,28 +1,16 @@
 <template>
-  <Dialog
-    v-model="show"
-    :options="{
-      size: 'xl',
-      actions: [
-        {
-          label: editMode ? __('Update') : __('Create'),
-          variant: 'solid',
-          disabled: !Boolean(hasChanged),
-          onClick: () => updateNote(),
-        },
-      ],
-    }"
-  >
+  <Dialog v-model="show" :options="{ size: 'xl' }">
+    <!-- Title -->
     <template #body-title>
       <div class="flex items-center gap-3">
         <h3 class="text-2xl font-semibold leading-6 text-ink-gray-9">
           {{ editMode ? __('Edit Note') : __('Create Note') }}
         </h3>
         <Button
-          v-if="_note?.parent"
+          v-if="canRedirect"
           size="sm"
-          :label="_note.parenttype == 'Opportunity' ? __('Open Opportunity') : __('Open Lead')"
-          @click="redirect()"
+          :label="redirectLabel"
+          @click="redirect"
         >
           <template #suffix>
             <ArrowUpRightIcon class="h-4 w-4" />
@@ -30,6 +18,8 @@
         </Button>
       </div>
     </template>
+
+    <!-- Content -->
     <template #body-content>
       <div class="flex flex-col gap-4">
         <div>
@@ -40,80 +30,98 @@
             :placeholder="__('Call with John Doe')"
           />
         </div>
+
         <div>
-          <div class="mb-1.5 text-xs text-ink-gray-5">{{ __('Content') }}</div>
+          <div class="mb-1.5 text-xs text-ink-gray-5">
+            {{ __('Content') }}
+          </div>
           <TextEditor
             variant="outline"
             ref="content"
-            editor-class="!prose-sm overflow-auto min-h-[180px] max-h-80 py-1.5 px-2 rounded-b border border-[--surface-gray-2] bg-surface-gray-2 placeholder-ink-gray-4 hover:border-outline-gray-modals hover:bg-surface-gray-3 hover:shadow-sm focus:bg-surface-white focus:border-outline-gray-4 focus:shadow-sm focus:ring-0 focus-visible:ring-2 focus-visible:ring-outline-gray-3 text-ink-gray-8 transition-colors"
             :fixed-menu="editorMenu"
+            editor-class="!prose-sm overflow-auto min-h-[180px] max-h-80 py-1.5 px-2 rounded-b border border-[--surface-gray-2] bg-surface-gray-2 placeholder-ink-gray-4 hover:border-outline-gray-modals hover:bg-surface-gray-3 hover:shadow-sm focus:bg-surface-white focus:border-outline-gray-4 focus:shadow-sm focus:ring-0 focus-visible:ring-2 focus-visible:ring-outline-gray-3 text-ink-gray-8 transition-colors"
             :content="_note.note"
+            :mentions="users"
             @change="(val) => (_note.note = val)"
             :placeholder="__('Took a call with John Doe and discussed the new project.')"
-            :mentions="users"
+          />
+        </div>
+
+        <ErrorMessage class="mt-2" v-if="error" :message="__(error)" />
+      </div>
+    </template>
+
+    <!-- Actions + Attachments -->
+    <template #actions>
+      <div class="flex items-center justify-between w-full gap-3">
+        <div class="flex-1" />
+        <div class="flex items-center gap-2">
+          <Button
+            :label="editMode ? __('Update') : __('Create')"
+            variant="solid"
+            :disabled="!hasChanged"
+            @click="updateNote"
           />
         </div>
       </div>
+
+      <!-- File uploader lives in the modal, triggered from editor toolbar -->
       <FilesUploader
         v-if="props.doc"
         v-model="showFilesUploader"
         :doctype="props.doctype"
         :docname="props.doc"
-        @after="
-          (files) => {
-            updateAttachments(files)
-          }
-        "
+        @after="(files) => updateAttachments(files)"
       />
+
       <NoteAttachments
         :note_name="note?.name"
         :editMode="true"
         :attachments="filteredAttachments"
-        @reload="
-          () => {
-            updateAttachments()
-          }
-        "
+        @reload="() => updateAttachments()"
       />
     </template>
   </Dialog>
 </template>
 
 <script setup>
-import ArrowUpRightIcon from '@/components/Icons/ArrowUpRightIcon.vue'
-import { capture } from '@/telemetry'
-import { TextEditor, call } from 'frappe-ui'
+import { TextEditor, call, ErrorMessage, Dialog, Button, FormControl } from 'frappe-ui'
 import { ref, computed, nextTick, watch, h, watchEffect } from 'vue'
 import { useRouter } from 'vue-router'
 import { usersStore } from '@/stores/users'
+import { capture } from '@/telemetry'
 import { createToast } from '@/utils'
 import FilesUploader from '@/components/FilesUploader/FilesUploader.vue'
-import NoteAttachments from '../Activities/NoteAttachments.vue'
+import NoteAttachments from '@/components/Activities/NoteAttachments.vue'
+import ArrowUpRightIcon from '@/components/Icons/ArrowUpRightIcon.vue'
 import { isEqual, sortBy } from 'lodash'
 
 const props = defineProps({
-  note: {
-    type: Object,
-    default: {},
-  },
-  doctype: {
-    type: String,
-    default: 'Lead',
-  },
-  doc: {
-    type: String,
-    default: '',
-  },
+  note: { type: Object, default: () => ({}) },
+  doctype: { type: String, default: 'Lead' },
+  doc: { type: String, default: '' },
 })
 
 const show = defineModel()
-const notes = defineModel('reloadNotes')
-const attachedFileNames = ref([])
+const notes = defineModel('reloadNotes') // parent passes list resource for reload
+const emit = defineEmits(['after'])
 
+const router = useRouter()
+const { users: usersList } = usersStore()
+
+const error = ref(null)
+const editMode = ref(false)
+const _note = ref({})
+
+/* ---------- Attachments handling ---------- */
+const attachedFileNames = ref([])
 const filteredAttachments = ref([])
+
 const updateAttachments = (files) => {
-  if (files?.length > 0) attachedFileNames.value = [...files, ...attachedFileNames.value]
-  notes.value?.reload()
+  if (files?.length) {
+    attachedFileNames.value = [...files, ...attachedFileNames.value]
+  }
+  notes.value?.reload?.()
 }
 
 watch(
@@ -123,21 +131,96 @@ watch(
       filteredAttachments.value = []
       return
     }
-
-    filteredAttachments.value = attachments.filter((att) => fileNames.includes(att.name))
+    filteredAttachments.value = attachments.filter((att) =>
+      fileNames.includes(att.name),
+    )
   },
   { immediate: true },
 )
 
-const emit = defineEmits(['after'])
+/* ---------- Mentions in editor ---------- */
+const users = computed(
+  () =>
+    usersList.data
+      ?.filter((u) => u.enabled)
+      .map((u) => ({ label: u.full_name.trimEnd(), value: u.name })) || [],
+)
 
-const { users: usersList } = usersStore()
+/* ---------- Redirect helpers (supports both schemas) ---------- */
+const canRedirect = computed(() => {
+  return Boolean(
+    props.note?.parent ||
+      (props.note?.reference_doctype && props.note?.reference_docname),
+  )
+})
 
-const router = useRouter()
+const redirectLabel = computed(() => {
+  const doctype =
+    props.note?.parenttype ||
+    props.note?.reference_doctype ||
+    props.doctype ||
+    ''
+  if (doctype === 'Opportunity' || doctype === 'CRM Deal') {
+    return __('Open Opportunity')
+  }
+  return __('Open Lead')
+})
 
-const title = ref(null)
-const editMode = ref(false)
-let _note = ref({})
+function redirect() {
+  const refDoctype = props.note?.parenttype || props.note?.reference_doctype
+  const refName = props.note?.parent || props.note?.reference_docname
+  if (!refDoctype || !refName) return
+
+  if (refDoctype === 'Opportunity' || refDoctype === 'CRM Deal') {
+    router.push({ name: 'Opportunity', params: { opportunityId: refName } })
+  } else {
+    router.push({ name: 'Lead', params: { leadId: refName } })
+  }
+}
+
+/* ---------- Rich text helpers + change detection ---------- */
+function isRichTextEmpty(content) {
+  if (!content) return true
+  const stripped = content.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, '').trim()
+  return stripped.length === 0
+}
+
+const hasChanged = ref(false)
+
+watchEffect(() => {
+  const current = _note.value || {}
+  const isEdit = editMode.value
+
+  const title = current.custom_title?.trim() || ''
+  const body = current.note || ''
+
+  const originalTitle = props.note?.custom_title?.trim() || ''
+  const originalBody = props.note?.note || ''
+
+  const titleChanged = title !== originalTitle
+  const bodyChanged = body !== originalBody
+
+  const titleHasContent = title.length > 0
+  const bodyHasContent = !isRichTextEmpty(body)
+
+  const initialAttachmentNames = (props.note?.attachments || [])
+    .map((a) => a.filename)
+    .sort()
+  const currentAttachmentNames = attachedFileNames.value.slice().sort()
+  const attachmentsChanged = !isEqual(
+    sortBy(initialAttachmentNames),
+    sortBy(currentAttachmentNames),
+  )
+
+  hasChanged.value = isEdit
+    ? (titleChanged && titleHasContent) ||
+      (bodyChanged && bodyHasContent) ||
+      attachmentsChanged
+    : titleHasContent || bodyHasContent || attachedFileNames.value.length > 0
+})
+
+/* ---------- Save / Update ---------- */
+const showFilesUploader = ref(false)
 
 async function updateNote() {
   if (!hasChanged.value) return
@@ -153,91 +236,84 @@ async function updateNote() {
   }
 
   try {
+    // Update existing note
     if (_note.value.name) {
-      let d = await call('next_crm.api.crm_note.update_note', {
+      const d = await call('next_crm.api.crm_note.update_note', {
         doctype: props.doctype,
         docname: props.doc || '',
         note_name: _note.value.name,
-        note: { custom_title: _note.value.custom_title, note: _note.value.note || '' },
+        note: {
+          custom_title: _note.value.custom_title,
+          note: _note.value.note || '',
+        },
         attachments: filteredAttachments.value.map((att) => att.name),
       })
-      if (d.name) {
-        notes.value?.reload()
+
+      if (d?.name) {
+        notes.value?.reload?.()
         emit('after', d)
+        createToast({
+          title: __('Note updated successfully'),
+          icon: 'check',
+          iconClasses: 'text-ink-green-3',
+        })
       }
-      createToast({
-        title: __('Note updated successfully'),
-        icon: 'check',
-        iconClasses: 'text-ink-green-3',
-      })
-    } else {
-      let d = await call('next_crm.api.crm_note.create_note', {
+    }
+    // Create new note
+    else {
+      const d = await call('next_crm.api.crm_note.create_note', {
         doctype: props.doctype,
         docname: props.doc || '',
         title: _note.value.custom_title,
         note: _note.value.note || '',
         attachments: filteredAttachments.value.map((att) => att.name),
       })
-      if (d.name) {
+
+      if (d?.name) {
         capture('note_created')
-        notes.value?.reload()
+        notes.value?.reload?.()
         emit('after', d, true)
+        createToast({
+          title: __('Note created successfully'),
+          icon: 'check',
+          iconClasses: 'text-ink-green-3',
+        })
       }
-      createToast({
-        title: __('Note created successfully'),
-        icon: 'check',
-        iconClasses: 'text-ink-green-3',
-      })
     }
+
     show.value = false
-  } catch (error) {
+  } catch (e) {
+    error.value = e?.message || String(e)
     createToast({
-      title: __(`Error ${_note.value.name ? 'updating' : 'creating'} note`),
-      text: error.message,
+      title: __(
+        `Error ${_note.value?.name ? 'updating' : 'creating'} note`,
+      ),
+      text: error.value,
       icon: 'x',
       iconClasses: 'text-ink-red-4',
     })
   }
 }
 
-function redirect() {
-  if (!props.note?.parent) return
-  let name = props.note.parenttype == 'Opportunity' ? 'Opportunity' : 'Lead'
-  let params = { leadId: props.note.parent }
-  if (name == 'Opportunity') {
-    params = { opportunityId: props.note.parent }
-  }
-  router.push({ name: name, params: params })
-}
-
-const users = computed(() => {
-  return (
-    usersList.data
-      ?.filter((user) => user.enabled)
-      .map((user) => ({
-        label: user.full_name.trimEnd(),
-        value: user.name,
-      })) || []
-  )
-})
-
+/* ---------- Initialize on open ---------- */
 watch(
   () => show.value,
-  (value) => {
-    if (!value) {
+  (val) => {
+    if (!val) {
       attachedFileNames.value = []
+      error.value = null
       return
     }
-
     editMode.value = Boolean(props.note?.name)
     nextTick(() => {
       _note.value = { ...props.note }
-      const fileNames = (props.note?.attachments || []).map((item) => item.filename)
+      const fileNames = (props.note?.attachments || []).map((i) => i.filename)
       attachedFileNames.value = fileNames
     })
   },
 )
 
+/* ---------- Editor toolbar (with Attach File) ---------- */
 const AttachmentIcon = h(
   'svg',
   {
@@ -257,7 +333,7 @@ const AttachmentIcon = h(
     }),
   ],
 )
-const showFilesUploader = ref(false)
+
 const editorMenu = ref([
   ['Heading 1', 'Heading 2', 'Heading 3', 'Heading 4', 'Heading 5', 'Heading 6'],
   'Paragraph',
@@ -307,41 +383,4 @@ const editorMenu = ref([
     },
   },
 ])
-
-const hasChanged = ref(false)
-
-function isRichTextEmpty(content) {
-  if (!content) return true
-  const stripped = content
-    .replace(/<[^>]*>/g, '')
-    .replace(/&nbsp;/g, '')
-    .trim()
-  return stripped.length === 0
-}
-
-watchEffect(() => {
-  const noteVal = _note.value || {}
-  const isEdit = editMode.value
-
-  const title = noteVal.custom_title?.trim() || ''
-  const note = noteVal.note || ''
-
-  const originalTitle = props.note.custom_title?.trim() || ''
-  const originalNote = props.note.note || ''
-
-  const titleChanged = title !== originalTitle
-  const noteChanged = note !== originalNote
-
-  const noteHasContent = !isRichTextEmpty(note)
-  const titleHasContent = title.length > 0
-
-  const initialAttachmentNames = (props.note.attachments || []).map((a) => a.filename).sort()
-  const currentAttachmentNames = attachedFileNames.value.slice().sort()
-  const attachmentsChanged = !isEqual(sortBy(initialAttachmentNames), sortBy(currentAttachmentNames))
-  if (!isEdit) {
-    hasChanged.value = titleHasContent || noteHasContent || attachedFileNames.value.length > 0
-  } else {
-    hasChanged.value = (titleChanged && titleHasContent) || (noteChanged && noteHasContent) || attachmentsChanged
-  }
-})
 </script>

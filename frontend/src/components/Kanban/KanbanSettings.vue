@@ -3,11 +3,8 @@
     :label="__('Kanban Settings')"
     @click="showDialog = true"
     v-bind="$attrs"
-  >
-    <template #prefix>
-      <KanbanIcon class="h-4" />
-    </template>
-  </Button>
+    :iconLeft="KanbanIcon"
+  />
   <Dialog v-model="showDialog" :options="{ title: __('Kanban Settings') }">
     <template #body-content>
       <div>
@@ -23,8 +20,8 @@
           <template #target="{ togglePopover }">
             <Button
               class="w-full !justify-start"
-              @click="togglePopover()"
               :label="columnField.label"
+              @click="togglePopover()"
             />
           </template>
         </Autocomplete>
@@ -80,16 +77,13 @@
           <template #target="{ togglePopover }">
             <Button
               class="w-full mt-2"
-              @click="togglePopover()"
               :label="__('Add Field')"
-            >
-              <template #prefix>
-                <FeatherIcon name="plus" class="h-4" />
-              </template>
-            </Button>
+              iconLeft="plus"
+              @click="togglePopover()"
+            />
           </template>
           <template #item-label="{ option }">
-            <div class="flex flex-col gap-1">
+            <div class="flex flex-col gap-1 text-ink-gray-9">
               <div>{{ option.label }}</div>
               <div class="text-ink-gray-4 text-sm">
                 {{ `${option.fieldname} - ${option.fieldtype}` }}
@@ -109,6 +103,7 @@
     </template>
   </Dialog>
 </template>
+
 <script setup>
 import DragVerticalIcon from '@/components/Icons/DragVerticalIcon.vue'
 import KanbanIcon from '@/components/Icons/KanbanIcon.vue'
@@ -133,7 +128,6 @@ const columnField = computed({
   get: () => {
     let fieldname = list.value?.data?.column_field
     if (!fieldname) return ''
-
     return columnFields.value?.find((field) => field.fieldname === fieldname)
   },
   set: (val) => {
@@ -145,7 +139,6 @@ const titleField = computed({
   get: () => {
     let fieldname = list.value?.data?.title_field
     if (!fieldname) return ''
-
     return fields.data?.find((field) => field.fieldname === fieldname)
   },
   set: (val) => {
@@ -166,20 +159,15 @@ const fields = createResource({
   params: { doctype: props.doctype, as_array: true },
   cache: ['kanban_fields', props.doctype],
   auto: true,
-  onSuccess: (data) => {
-    data
-  },
 })
 
 const allFields = computed({
   get: () => {
     let rows = list.value?.data?.kanban_fields
     if (!rows) return []
-
     if (typeof rows === 'string') {
       rows = JSON.parse(rows)
     }
-
     if (rows && fields.data) {
       rows = rows.map((row) => {
         return fields.data.find((field) => field.fieldname === row) || {}

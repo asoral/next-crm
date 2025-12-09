@@ -1,118 +1,285 @@
 <template>
-  <Popover transition="default">
-    <template #target="{ togglePopover, isOpen }">
-      <slot v-bind="{ isOpen, togglePopover }">
-        <span class="text-base"> {{ modelValue || '' }} </span>
-      </slot>
-    </template>
-    <template #body="{ togglePopover }">
-      <div
-        v-if="reaction"
-        class="px-2 py-1 flex items-center justify-center gap-2 rounded-full bg-surface-modal shadow-2xl ring-1 ring-black ring-opacity-5 focus:outline-none"
-      >
-        <div
-          class="size-5 cursor-pointer rounded-full bg-surface-transparent text-xl"
-          v-for="r in reactionEmojis"
-          :key="r"
-          @click="() => (emoji = r) && togglePopover()"
-        >
-          <button>
-            {{ r }}
-          </button>
-        </div>
-        <Button
-          class="rounded-full"
-          icon="plus"
-          @click.stop="() => (reaction = false)"
-        />
-      </div>
-      <div
-        v-else
-        class="my-3 max-w-max transform bg-surface-white px-4 sm:px-0"
-      >
-        <div
-          class="relative max-h-96 pb-3 overflow-y-auto min-w-40 rounded-lg bg-surface-modal shadow-2xl ring-1 ring-black ring-opacity-5 focus:outline-none"
-        >
-          <div class="flex gap-2 px-3 pb-1 pt-3">
-            <div class="flex-1">
-              <FormControl
-                type="text"
-                placeholder="Search by keyword"
-                v-model="search"
-                :debounce="300"
-              />
-            </div>
-            <Button @click="setRandom">Random</Button>
-          </div>
-          <div class="w-96"></div>
-          <div class="px-3" v-for="(emojis, group) in emojiGroups" :key="group">
-            <div
-              class="sticky top-0 bg-surface-modal pb-2 pt-3 text-sm text-ink-gray-7"
-            >
-              {{ group }}
-            </div>
-            <div class="grid w-96 grid-cols-12 place-items-center">
-              <button
-                class="h-8 w-8 rounded-md p-1 text-2xl hover:bg-surface-gray-2 focus:outline-none focus:ring focus:ring-blue-200"
-                v-for="_emoji in emojis"
-                :key="_emoji.description"
-                @click="() => (emoji = _emoji.emoji) && togglePopover()"
-                :title="_emoji.description"
-              >
-                {{ _emoji.emoji }}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </template>
-  </Popover>
+  <EditValueModal
+    v-if="showEditModal"
+    v-model="showEditModal"
+    :doctype="doctype"
+    :selectedValues="selectedValues"
+    @reload="reload"
+  />
+  <AssignmentModal
+    v-if="showAssignmentModal"
+    v-model="showAssignmentModal"
+    v-model:assignees="bulkAssignees"
+    :docs="selectedValues"
+    :doctype="doctype"
+    @reload="reload"
+  />
+  <DeleteLinkedDocModal
+    v-if="showDeleteDocModal.showLinkedDocsModal"
+    v-model="showDeleteDocModal.showLinkedDocsModal"
+    :doctype="props.doctype"
+    :docname="showDeleteDocModal.docname"
+    :reload="reload"
+  />
+  <BulkDeleteLinkedDocModal
+    v-if="showDeleteDocModal.showDeleteModal"
+    v-model="showDeleteDocModal.showDeleteModal"
+    :doctype="props.doctype"
+    :items="showDeleteDocModal.items"
+    :reload="reload"
+  />
 </template>
+
 <script setup>
-import Popover from '@/components/frappe-ui/Popover.vue'
-import { gemoji } from 'gemoji'
-import { ref, computed } from 'vue'
+import EditValueModal from '@/components/Modals/EditValueModal.vue'
+import AssignmentModal from '@/components/Modals/AssignmentModal.vue'
+import { setupListCustomizations } from '@/utils'
+import { globalStore } from '@/stores/global'
+import { capture } from '@/telemetry'
+import { call, toast } from 'frappe-ui'
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 
-const search = ref('')
-const emoji = defineModel()
-const reaction = defineModel('reaction')
-
-const reactionEmojis = ref(['👍', '❤️', '😂', '😮', '😢', '🙏'])
-
-const emojiGroups = computed(() => {
-  let groups = {}
-  for (let _emoji of gemoji) {
-    if (search.value) {
-      let keywords = [_emoji.description, ..._emoji.names, ..._emoji.tags]
-        .join(' ')
-        .toLowerCase()
-      if (!keywords.includes(search.value.toLowerCase())) {
-        continue
-      }
-    }
-
-    let group = groups[_emoji.category]
-    if (!group) {
-      groups[_emoji.category] = []
-      group = groups[_emoji.category]
-    }
-    group.push(_emoji)
-  }
-  if (!Object.keys(groups).length) {
-    groups['No results'] = []
-  }
-  return groups
+const props = defineProps({
+  doctype: {
+    type: String,
+    default: '',
+  },
+  options: {
+    type: Object,
+    default: () => ({
+      hideEdit: false,
+      hideDelete: false,
+      hideAssign: false,
+    }),
+  },
 })
 
-function setRandom() {
-  let total = gemoji.length
-  let index = randomInt(0, total - 1)
-  emoji.value = gemoji[index].emoji
+const list = defineModel()
+const router = useRouter()
+const { $dialog, $socket } = globalStore()
+
+/* modal / selection state */
+const showEditModal = ref(false)
+const selectedValues = ref([])
+const unselectAllAction = ref(() => {})
+const showDeleteDocModal = ref({
+  showLinkedDocsModal: false,
+  showDeleteModal: false,
+  docname: null,
+})
+const showAssignmentModal = ref(false)
+const bulkAssignees = ref([])
+
+/* Open edit modal with selections */
+function editValues(selections, unselectAll) {
+  selectedValues.value = selections
+  showEditModal.value = true
+  unselectAllAction.value = unselectAll
 }
 
-function randomInt(min, max) {
-  return Math.floor(Math.random() * (max - min + 1) + min)
+/* Convert selected leads to opportunities (confirmation dialog + backend calls) */
+function convertToOpportunity(selections, unselectAll) {
+  $dialog({
+    title: __('Convert to Opportunity'),
+    message: __('Are you sure you want to convert {0} Lead(s) to Opportunity(s)?', [selections.size]),
+    variant: 'solid',
+    theme: 'blue',
+    actions: [
+      {
+        label: __('Convert'),
+        variant: 'solid',
+        onClick: (close) => {
+          capture('bulk_convert_to_opportunity')
+          const names = Array.from(selections)
+          // Run conversions sequentially to preserve ordering and easier debugging
+          Promise.all(
+            names.map((name) =>
+              call('next_crm.overrides.lead.convert_to_opportunity', {
+                lead: name,
+              }),
+            ),
+          )
+            .then(() => {
+              toast.success(__('Converted successfully'))
+              list.value.reload()
+              unselectAll()
+              close()
+            })
+            .catch((err) => {
+              // Show a toast error if any conversion failed
+              toast.create && toast.create({ title: __('Conversion failed'), body: String(err) })
+              close()
+            })
+        },
+      },
+    ],
+  })
 }
 
-defineExpose({ setRandom })
+/* Delete flow:
+   - store unselectAllAction
+   - if one doc selected => show DeleteLinkedDocModal (to inspect linked docs before deleting)
+   - else show BulkDeleteLinkedDocModal for many
+*/
+function deleteValues(selections, unselectAll) {
+  unselectAllAction.value = unselectAll
+
+  const selectedDocs = Array.from(selections)
+  if (selectedDocs.length === 1) {
+    showDeleteDocModal.value = {
+      showLinkedDocsModal: true,
+      showDeleteModal: false,
+      docname: selectedDocs[0],
+    }
+  } else if (selectedDocs.length > 1) {
+    showDeleteDocModal.value = {
+      showLinkedDocsModal: false,
+      showDeleteModal: true,
+      items: selectedDocs,
+      docname: null,
+    }
+  } else {
+    // nothing selected — no-op
+  }
+}
+
+/* Assign modal */
+function assignValues(selections, unselectAll) {
+  showAssignmentModal.value = true
+  selectedValues.value = selections
+  unselectAllAction.value = unselectAll
+}
+
+/* Clear assignment with confirmation */
+function clearAssignemnts(selections, unselectAll) {
+  $dialog({
+    title: __('Clear Assignment'),
+    message: __('Are you sure you want to clear assignment for {0} item(s)?', [selections.size]),
+    variant: 'solid',
+    theme: 'red',
+    actions: [
+      {
+        label: __('Clear Assignment'),
+        variant: 'solid',
+        theme: 'red',
+        onClick: (close) => {
+          capture('bulk_clear_assignment')
+          call('frappe.desk.form.assign_to.remove_multiple', {
+            doctype: props.doctype,
+            names: JSON.stringify(Array.from(selections)),
+            ignore_permissions: true,
+          })
+            .then(() => {
+              toast.success(__('Assignment cleared successfully'))
+              reload(unselectAll)
+              close()
+            })
+            .catch((err) => {
+              toast.create && toast.create({ title: __('Failed to clear assignment'), body: String(err) })
+              close()
+            })
+        },
+      },
+    ],
+  })
+}
+
+/* Custom actions passed from setupListCustomizations or list data */
+const customBulkActions = ref([])
+const customListActions = ref([])
+
+function bulkActions(selections, unselectAll) {
+  let actions = []
+
+  if (!props.options.hideEdit) {
+    actions.push({
+      label: __('Edit'),
+      onClick: () => editValues(selections, unselectAll),
+    })
+  }
+
+  if (!props.options.hideDelete) {
+    actions.push({
+      label: __('Delete'),
+      onClick: () => deleteValues(selections, unselectAll),
+    })
+  }
+
+  if (!props.options.hideAssign) {
+    actions.push({
+      label: __('Assign To'),
+      onClick: () => assignValues(selections, unselectAll),
+    })
+    actions.push({
+      label: __('Clear Assignment'),
+      onClick: () => clearAssignemnts(selections, unselectAll),
+    })
+  }
+
+  if (props.doctype === 'Lead') {
+    actions.push({
+      label: __('Convert to Opportunity'),
+      onClick: () => convertToOpportunity(selections, unselectAll),
+    })
+  }
+
+  customBulkActions.value.forEach((action) => {
+    actions.push({
+      label: __(action.label),
+      onClick: () =>
+        action.onClick({
+          list: list.value,
+          selections,
+          unselectAll,
+          call,
+          createToast: toast.create, // keep compatibility for older custom actions
+          toast,
+          $dialog,
+          router,
+        }),
+    })
+  })
+
+  return actions
+}
+
+/* reload helper resets delete modal state and reloads list */
+function reload(unselectAll) {
+  showDeleteDocModal.value = {
+    showLinkedDocsModal: false,
+    showDeleteModal: false,
+    docname: null,
+    items: undefined,
+  }
+
+  try {
+    unselectAllAction.value?.()
+  } catch (e) {
+    /* ignore */
+  }
+  unselectAll?.()
+  list.value?.reload()
+}
+
+/* mount customizations */
+onMounted(async () => {
+  if (!list.value?.data) return
+  let customization = await setupListCustomizations(list.value.data, {
+    list: list.value,
+    call,
+    createToast: toast.create,
+    toast,
+    $dialog,
+    $socket,
+    router,
+  })
+  customBulkActions.value = customization?.bulkActions || list.value?.data?.bulkActions || []
+  customListActions.value = customization?.actions || list.value?.data?.listActions || []
+})
+
+defineExpose({
+  bulkActions,
+  customListActions,
+})
 </script>

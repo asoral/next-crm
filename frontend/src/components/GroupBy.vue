@@ -2,19 +2,19 @@
   <Autocomplete :options="options" value="" @change="(e) => setGroupBy(e)">
     <template #target="{ togglePopover, isOpen }">
       <Button
-        :label="hideLabel ? groupByValue?.label : __('Group By: ') + groupByValue?.label"
+        :label="
+          hideLabel
+            ? groupByValue?.label
+            : __('Group By: ') + groupByValue?.label
+        "
+        :iconLeft="DetailsIcon"
+        :iconRight="isOpen ? 'chevron-up' : 'chevron-down'"
         @click="togglePopover()"
-      >
-        <template #prefix>
-          <DetailsIcon />
-        </template>
-        <template #suffix>
-          <FeatherIcon :name="isOpen ? 'chevron-up' : 'chevron-down'" class="h-4" />
-        </template>
-      </Button>
+      />
     </template>
   </Autocomplete>
 </template>
+
 <script setup>
 import Autocomplete from '@/components/frappe-ui/Autocomplete.vue'
 import DetailsIcon from '@/components/Icons/DetailsIcon.vue'
@@ -34,19 +34,20 @@ const props = defineProps({
 
 const emit = defineEmits(['update'])
 
+/* list is provided by your app's model system (keeps original pattern) */
 const list = defineModel()
 
+/* currently selected group-by value */
 const groupByValue = ref({
   label: '',
-  value: '',
+  fieldname: '',
 })
 
+/* fetch available group-by fields from API */
 const groupByOptions = createResource({
   url: 'next_crm.api.doc.get_group_by_fields',
   cache: ['groupByOptions', props.doctype],
-  params: {
-    doctype: props.doctype,
-  },
+  params: { doctype: props.doctype },
 })
 
 onMounted(() => {
@@ -54,16 +55,31 @@ onMounted(() => {
   groupByOptions.fetch()
 })
 
+/* when user selects option from Autocomplete */
 function setGroupBy(data) {
+  if (!data?.fieldname) return
   groupByValue.value = data
-  nextTick(() => emit('update', data.value))
+  // emit fieldname to parent after DOM updates
+  nextTick(() => emit('update', data.fieldname))
 }
 
+/* computed options: if the list already has a group_by_field use it as current
+   and exclude it from the dropdown options (filter by fieldname) */
 const options = computed(() => {
   if (!groupByOptions.data) return []
   if (!list.value?.data?.group_by_field) return groupByOptions.data
-  groupByValue.value = list.value.data.group_by_field
-  return groupByOptions.data.filter((option) => option !== groupByValue.value.value)
-})
 
+  // normalize and adopt list's group_by_field if present
+  const listGroup = list.value.data.group_by_field
+  if (listGroup?.fieldname) {
+    groupByValue.value = {
+      label: listGroup.label ?? listGroup.fieldname ?? '',
+      fieldname: listGroup.fieldname,
+    }
+  }
+
+  return groupByOptions.data.filter(
+    (option) => option.fieldname !== groupByValue.value.fieldname,
+  )
+})
 </script>

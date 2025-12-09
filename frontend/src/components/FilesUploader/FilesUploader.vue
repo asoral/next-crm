@@ -7,11 +7,18 @@
     }"
   >
     <template #body-content>
-      <FilesUploaderArea ref="filesUploaderArea" v-model="files" :doctype="doctype" :options="options" />
+      <FilesUploaderArea
+        ref="filesUploaderArea"
+        v-model="files"
+        :doctype="doctype"
+        :options="options"
+      />
     </template>
+
     <template #actions>
       <div class="flex justify-between">
         <div class="flex gap-2">
+          <!-- Remove all files -->
           <Button
             v-if="files.length"
             variant="subtle"
@@ -19,9 +26,12 @@
             :disabled="fileUploadStarted"
             @click="removeAllFiles"
           />
+
+          <!-- Back buttons -->
           <Button
             v-if="filesUploaderArea?.showWebLink || filesUploaderArea?.showCamera"
             :label="isMobileView ? __('Back') : __('Back to file upload')"
+            iconLeft="arrow-left"
             @click="
               () => {
                 filesUploaderArea.showWebLink = false
@@ -30,11 +40,9 @@
                 filesUploaderArea.cameraImage = null
               }
             "
-          >
-            <template #prefix>
-              <FeatherIcon name="arrow-left" class="size-4" />
-            </template>
-          </Button>
+          />
+
+          <!-- Camera options -->
           <Button
             v-if="filesUploaderArea?.showCamera && !filesUploaderArea?.cameraImage"
             :label="__('Switch camera')"
@@ -46,7 +54,9 @@
             @click="filesUploaderArea.cameraImage = null"
           />
         </div>
+
         <div class="flex gap-2">
+          <!-- Set private/public -->
           <Button
             v-if="isAllPrivate && files.length"
             variant="subtle"
@@ -61,6 +71,8 @@
             :disabled="fileUploadStarted"
             @click="setAllPrivate"
           />
+
+          <!-- Attach/upload actions -->
           <Button
             v-if="!filesUploaderArea?.showCamera"
             variant="solid"
@@ -88,11 +100,11 @@
 </template>
 
 <script setup>
+import { ref, computed } from 'vue'
+import { isMobileView } from '@/composables/settings'
 import FilesUploaderArea from '@/components/FilesUploader/FilesUploaderArea.vue'
 import FilesUploadHandler from './filesUploaderHandler'
-import { isMobileView } from '@/composables/settings'
-import { createToast } from '@/utils'
-import { ref, computed } from 'vue'
+import { toast } from 'frappe-ui'
 
 const props = defineProps({
   doctype: {
@@ -112,26 +124,32 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['after'])
-
 const show = defineModel()
 
 const filesUploaderArea = ref(null)
 const files = ref([])
+const uploader = ref(null)
+const fileUploadStarted = ref(false)
+const uploadedFileNames = ref([])
+const completedUploads = ref(0)
 
+/* Computed: check privacy of all files */
 const isAllPrivate = computed(() => files.value.every((a) => a.private))
 
+/* Set all to private/public */
 function setAllPrivate() {
   files.value.forEach((file) => (file.private = true))
 }
-
 function setAllPublic() {
   files.value.forEach((file) => (file.private = false))
 }
 
+/* Remove all files */
 function removeAllFiles() {
   files.value = []
 }
 
+/* Disable attach button logic */
 const disableAttachButton = computed(() => {
   if (filesUploaderArea.value?.showCamera) {
     return !filesUploaderArea.value.cameraImage
@@ -142,6 +160,7 @@ const disableAttachButton = computed(() => {
   return !files.value.length
 })
 
+/* Attach files main handler */
 function attachFiles() {
   if (filesUploaderArea.value.showWebLink) {
     return uploadViaWebLink()
@@ -151,30 +170,22 @@ function attachFiles() {
   files.value.forEach((file, i) => attachFile(file, i))
 }
 
+/* Upload via web link */
 function uploadViaWebLink() {
   let fileUrl = filesUploaderArea.value.webLink
   if (!fileUrl) {
-    createToast({
-      title: __('Error'),
-      title: __('Please enter a valid URL'),
-      icon: 'x',
-      iconClasses: 'text-ink-red-4',
-    })
+    // ✅ Merged fix: use Frappe toast for UX consistency
+    toast.error(__('Please enter a valid URL'))
     return
   }
+
   fileUrl = decodeURI(fileUrl)
   show.value = false
-  return attachFile({
-    fileUrl,
-  })
+
+  return attachFile({ fileUrl })
 }
 
-const uploader = ref(null)
-const fileUploadStarted = ref(false)
-
-const uploadedFileNames = ref([])
-const completedUploads = ref(0)
-
+/* Upload individual file */
 function attachFile(file, i) {
   const args = {
     fileObj: file.fileObj || {},
@@ -192,14 +203,17 @@ function attachFile(file, i) {
     file.uploading = true
     fileUploadStarted.value = true
   })
+
   uploader.value.on('progress', (data) => {
     file.uploaded = data.uploaded
     file.total = data.total
   })
+
   uploader.value.on('error', (error) => {
     file.uploading = false
     file.errorMessage = error || 'Error Uploading File'
   })
+
   uploader.value.on('finish', () => {
     file.uploading = false
   })
@@ -210,6 +224,7 @@ function attachFile(file, i) {
       uploadedFileNames.value.push(res.name)
       completedUploads.value++
 
+      // All uploads done
       if (completedUploads.value === files.value.length) {
         files.value = []
         show.value = false
@@ -220,6 +235,7 @@ function attachFile(file, i) {
     .catch((error) => {
       file.uploading = false
       let errorMessage = 'Error Uploading File'
+
       if (error?._server_messages) {
         errorMessage = JSON.parse(JSON.parse(error._server_messages)[0]).message
       } else if (error?.exc) {
@@ -227,6 +243,7 @@ function attachFile(file, i) {
       } else if (typeof error === 'string') {
         errorMessage = error
       }
+
       file.errorMessage = errorMessage
     })
 }

@@ -9,6 +9,7 @@
             </h3>
           </div>
           <div class="flex items-center gap-1">
+            <!-- Quick Entry (keep your feature) -->
             <Button
               v-if="isManager()"
               variant="ghost"
@@ -22,11 +23,13 @@
             </Button>
           </div>
         </div>
+
         <div v-if="sections.data">
           <Fields :sections="sections.data" :data="_address" />
           <ErrorMessage class="mt-2" :message="error" />
         </div>
       </div>
+
       <div class="px-4 pb-7 pt-4 sm:px-6">
         <div class="space-y-2">
           <Button
@@ -41,6 +44,8 @@
       </div>
     </template>
   </Dialog>
+
+  <!-- Keep Quick Entry modal -->
   <QuickEntryModal
     v-if="showQuickEntryModal"
     v-model="showQuickEntryModal"
@@ -54,29 +59,33 @@ import Fields from '@/components/Fields.vue'
 import EditIcon from '@/components/Icons/EditIcon.vue'
 import { usersStore } from '@/stores/users'
 import { capture } from '@/telemetry'
-import { call, FeatherIcon, createResource, ErrorMessage } from 'frappe-ui'
+import { call, FeatherIcon, createResource, ErrorMessage, Dialog, Button } from 'frappe-ui'
 import { ref, nextTick, watch, computed } from 'vue'
 
+/** Props (unchanged) */
 const props = defineProps({
   options: {
     type: Object,
-    default: {
+    default: () => ({
       afterInsert: () => {},
-    },
+    }),
   },
 })
 
+/** Stores */
 const { isManager } = usersStore()
 
+/** v-models */
 const show = defineModel()
 const address = defineModel('address')
 
+/** Local state */
 const loading = ref(false)
 const error = ref(null)
-const title = ref(null)
 const editMode = ref(false)
 
-let _address = ref({
+/** Working copy */
+const _address = ref({
   name: '',
   address_title: '',
   address_type: 'Billing',
@@ -89,23 +98,21 @@ let _address = ref({
   pincode: '',
 })
 
+/** Dialog options */
 const dialogOptions = computed(() => {
-  let title = !editMode.value
-    ? __('New Address')
-    : __(_address.value.address_title)
-  let size = 'xl'
-  let actions = [
+  const title = !editMode.value ? __('New Address') : __(_address.value.address_title || 'Address')
+  const size = 'xl'
+  const actions = [
     {
       label: editMode.value ? __('Save') : __('Create'),
       variant: 'solid',
-      onClick: () =>
-        editMode.value ? updateAddress() : createAddress.submit(),
+      onClick: () => (editMode.value ? updateAddress() : createAddress.submit()),
     },
   ]
-
   return { title, size, actions }
 })
 
+/** Layout sections (Quick Entry layout) */
 const sections = createResource({
   url: 'next_crm.ncrm.doctype.crm_fields_layout.crm_fields_layout.get_fields_layout',
   cache: ['quickEntryFields', 'Address'],
@@ -113,36 +120,37 @@ const sections = createResource({
   auto: true,
 })
 
-let doc = ref({})
+/** Original doc snapshot for dirty check */
+const doc = ref({})
 
+/** Update flow (set_value) */
 function updateAddress() {
   error.value = null
-  const old = { ...doc.value }
-  const newAddress = { ..._address.value }
+  const oldJSON = JSON.stringify(doc.value || {})
+  const newJSON = JSON.stringify(_address.value || {})
 
-  const dirty = JSON.stringify(old) !== JSON.stringify(newAddress)
-  const values = newAddress
-
-  if (!dirty) {
+  // If nothing changed, just close.
+  if (oldJSON === newJSON) {
     show.value = false
     return
   }
 
   loading.value = true
+  // IMPORTANT: set_value expects scalar fieldnames -> value mapping.
+  // We pass the full object but the endpoint will ignore immutable fields;
+  // server may raise CannotChangeConstantError for protected fields.
   updateAddressValues.submit({
     doctype: 'Address',
     name: _address.value.name,
-    fieldname: values,
+    fieldname: _address.value,
   })
 }
 
 const updateAddressValues = createResource({
   url: 'frappe.client.set_value',
-  onSuccess(doc) {
+  onSuccess(docOut) {
     loading.value = false
-    if (doc.name) {
-      handleAddressUpdate(doc)
-    }
+    if (docOut?.name) handleAddressUpdate(docOut)
   },
   onError(err) {
     loading.value = false
@@ -150,6 +158,7 @@ const updateAddressValues = createResource({
   },
 })
 
+/** Create flow (insert) */
 const createAddress = createResource({
   url: 'frappe.client.insert',
   makeParams() {
@@ -160,11 +169,11 @@ const createAddress = createResource({
       },
     }
   },
-  onSuccess(doc) {
+  onSuccess(docOut) {
     loading.value = false
-    if (doc.name) {
+    if (docOut?.name) {
       capture('address_created')
-      handleAddressUpdate(doc)
+      handleAddressUpdate(docOut)
     }
   },
   onError(err) {
@@ -173,30 +182,29 @@ const createAddress = createResource({
   },
 })
 
-function handleAddressUpdate(doc) {
+function handleAddressUpdate(docOut) {
   show.value = false
-  props.options.afterInsert && props.options.afterInsert(doc)
+  props.options.afterInsert && props.options.afterInsert(docOut)
 }
 
+/** Open/prepare modal */
 watch(
   () => show.value,
   (value) => {
     if (!value) return
     editMode.value = false
     nextTick(() => {
-      // TODO: Issue with FormControl
-      // title.value.el.focus()
-      doc.value = address.value?.doc || address.value || {}
-      _address.value = { ...doc.value }
-      if (_address.value.name) {
-        editMode.value = true
-      }
+      // hydrate from parent
+      const src = address.value?.doc || address.value || {}
+      doc.value = { ...src }
+      _address.value = { ...src }
+      if (_address.value.name) editMode.value = true
     })
   },
 )
 
+/** Quick Entry (kept) */
 const showQuickEntryModal = ref(false)
-
 function openQuickEntryModal() {
   showQuickEntryModal.value = true
   nextTick(() => {

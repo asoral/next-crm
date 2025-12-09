@@ -7,9 +7,14 @@ export const viewsStore = defineStore('crm-views', (doctype) => {
   let pinnedViews = ref([])
   let publicViews = ref([])
   let groupedViews = ref([])
-  let defaultView = ref({})
 
-  // Views
+  // Your HEAD default view style (object mapped by dt + type)
+  const defaultViewMap = ref({})
+
+  // frappe/develop standard views
+  const standardViews = ref({})
+
+  // Views Resource
   const views = createResource({
     url: 'next_crm.api.views.get_views',
     params: { doctype: doctype || '' },
@@ -21,69 +26,89 @@ export const viewsStore = defineStore('crm-views', (doctype) => {
       publicViews.value = []
       groupedViews.value = []
       viewsByName = reactive({})
+      defaultViewMap.value = {}
+      standardViews.value = {}
 
       for (let view of views) {
-        if (!view) continue 
+        if (!view) continue
 
         viewsByName[view.name] = view
         view.type = view.type || 'list'
 
-        if (view.pinned) {
-          pinnedViews.value?.push(view)
+        // Pinned
+        if (view.pinned) pinnedViews.value.push(view)
+
+        // Public
+        if (view.public) publicViews.value.push(view)
+
+        // Grouped (your feature)
+        if (view.group) groupedViews.value.push(view)
+
+        // Standard (frappe/develop)
+        if (view.is_standard && view.dt) {
+          standardViews.value[view.dt + ' ' + view.type] = view
         }
-        if (view.public) {
-          publicViews.value?.push(view)
-        }
-        if (view.group) {
-          groupedViews.value?.push(view)
-        }
+
+        // Default (HEAD behaviour)
         if (view.is_default && view.dt) {
-          defaultView.value[view.dt + ' ' + view.type] = view
+          defaultViewMap.value[view.dt + ' ' + view.type] = view
         }
       }
+
       return views
     },
   })
 
-  function getDefaultView() {
-    return defaultView.value
+  /* ---------------------------
+    GETTERS
+  ---------------------------- */
+
+  function getDefaultView(doctype = null, type = 'list') {
+    if (doctype) {
+      return defaultViewMap.value[doctype + ' ' + type] || null
+    }
+    return defaultViewMap.value
   }
 
-  function getView(view, type, doctype = null) {
-    type = type || 'list'
+  function getView(view, type = 'list', doctype = null) {
     if (!view && doctype) {
-      return defaultView.value[doctype + ' ' + type] || null
+      // First try standard view
+      return standardViews.value[doctype + ' ' + type] || null
     }
     return viewsByName[view]
   }
 
- function getPinnedViews() {
-    if (!pinnedViews.value?.length) return []
-    return pinnedViews.value
+  function getPinnedViews() {
+    return pinnedViews.value || []
   }
 
   function getPublicViews() {
-    if (!publicViews.value?.length) return []
-    return publicViews.value
+    return publicViews.value || []
   }
 
   function getGroupedViews() {
-    if (!groupedViews.value?.length) return []
-    return groupedViews.value
+    return groupedViews.value || []
   }
 
   async function reload() {
     await views.reload()
   }
 
+  /* ---------------------------
+    RETURN STORE
+  ---------------------------- */
+
   return {
     views,
-    defaultView,
+    defaultViewMap,
+    standardViews,
+
     getDefaultView,
     getPinnedViews,
     getPublicViews,
     getGroupedViews,
-    reload,
+
     getView,
+    reload,
   }
 })

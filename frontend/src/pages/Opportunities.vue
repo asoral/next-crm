@@ -230,6 +230,9 @@
     @applyFilter="(data) => viewControls.applyFilter(data)"
     @applyLikeFilter="(data) => viewControls.applyLikeFilter(data)"
     @likeDoc="(data) => viewControls.likeDoc(data)"
+    @selectionsChanged="
+      (selections) => viewControls.updateSelections(selections)
+    "
   />
   <div v-else-if="opportunities.data" class="flex h-full items-center justify-center">
     <div
@@ -288,6 +291,7 @@ import NoteModal from '@/components/Modals/NoteModal.vue'
 import ToDoModal from '@/components/Modals/ToDoModal.vue'
 import QuickEntryModal from '@/components/Modals/QuickEntryModal.vue'
 import ViewControls from '@/components/ViewControls.vue'
+import { getMeta } from '@/stores/meta'
 import { globalStore } from '@/stores/global'
 import { usersStore } from '@/stores/users'
 import { customersStore } from '@/stores/customers'
@@ -306,6 +310,8 @@ import { Tooltip, Avatar, Dropdown, call } from 'frappe-ui'
 import { useRoute } from 'vue-router'
 import { ref, reactive, computed, h, onBeforeMount, onBeforeUpdate } from 'vue'
 
+const { getFormattedPercent, getFormattedFloat, getFormattedCurrency } =
+  getMeta('CRM Deal')
 const { makeCall } = globalStore()
 const { getUser } = usersStore()
 const { getCustomer } = customersStore()
@@ -359,7 +365,7 @@ const rows = computed(() => {
   }
 })
 
-function getGroupedByRows(listRows, groupByField) {
+function getGroupedByRows(listRows, groupByField, columns) {
   let groupedRows = []
 
   groupByField.options?.forEach((option) => {

@@ -1,79 +1,120 @@
 <template>
   <div class="activity group overflow-hidden">
+    <!-- Header Row -->
     <div class="mb-1 flex items-center justify-stretch gap-2 py-1 text-base">
       <div class="inline-flex items-center flex-wrap gap-1 text-ink-gray-5">
         <UserAvatar class="mr-1" :user="note.owner" size="md" />
-        <span class="font-medium text-ink-gray-8" :title="getUser(note.owner).full_name">
+        <span
+          class="font-medium text-ink-gray-8"
+          :title="getUser(note.owner).full_name"
+        >
           {{ getUser(note.owner).full_name }}
         </span>
       </div>
       <div class="flex items-center gap-2 ml-auto whitespace-nowrap">
-        <Tooltip :text="dateFormat(note.added_on, dateTooltipFormat)">
+        <Tooltip :text="formatDate(note.added_on, 'ddd, MMM D, YYYY')">
           <div class="truncate text-sm text-ink-gray-7">
             {{ __(timeAgo(note.added_on)) }}
           </div>
         </Tooltip>
+
         <Tooltip v-if="!note.custom_parent_note" :text="__('Reply')">
           <div @click.stop="replyNote">
-            <Button variant="ghost" class="text-ink-gray-7 !h-6 !w-6 hover:bg-surface-gray-2">
+            <Button
+              variant="ghost"
+              class="text-ink-gray-7 !h-6 !w-6 hover:bg-surface-gray-2"
+            >
               <template #icon>
                 <ReplyIcon />
               </template>
             </Button>
           </div>
         </Tooltip>
+
         <Dropdown
-          :options="[
-            {
-              label: __('Delete'),
-              icon: 'trash-2',
-              onClick: () => deleteNote(note.name),
-            },
-          ]"
+          :options="dropdownOptions"
           @click.stop
           class="h-6 w-6"
         >
-          <Button icon="more-horizontal" variant="ghosted" class="!h-6 !w-6 hover:bg-surface-gray-2" />
+          <Button
+            icon="more-horizontal"
+            variant="ghosted"
+            class="!h-6 !w-6 hover:bg-surface-gray-2"
+          />
         </Dropdown>
       </div>
     </div>
+
+    <!-- Main Note Card -->
     <div
       class="activity group flex max-h-64 cursor-pointer flex-col justify-between gap-2 rounded-md bg-surface-gray-1 px-4 py-3 hover:bg-surface-gray-2"
       @click="props.modalRef.showNote(note)"
     >
       <div class="flex items-center justify-between">
         <div class="truncate text-lg font-medium text-ink-gray-8">
-          {{ note.custom_title }}
+          {{ note.custom_title || note.title }}
         </div>
       </div>
+
       <TextEditor
-        v-if="note.note"
-        :content="note.note"
+        v-if="note.note || note.content"
+        :content="note.note || note.content"
         :editable="false"
         editor-class="!prose-sm max-w-none !text-sm text-ink-gray-5 focus:outline-none"
         class="flex-1 overflow-x-hidden"
       />
+
       <NoteAttachments
         :note_name="note?.name"
         :editMode="false"
         :attachments="filteredAttachments"
-        @reload="notes?.value?.reload()"
+        @reload="reloadNotesResource"
       />
+
+      <div class="mt-1 flex items-center justify-between gap-2">
+        <div class="flex items-center gap-2 truncate">
+          <UserAvatar :user="note.owner" size="xs" />
+          <div
+            class="truncate text-sm text-ink-gray-8"
+            :title="getUser(note.owner).full_name"
+          >
+            {{ getUser(note.owner).full_name }}
+          </div>
+        </div>
+        <Tooltip :text="formatDate(note.modified, 'ddd, MMM D, YYYY')">
+          <div class="truncate text-sm text-ink-gray-7">
+            {{ __(timeAgo(note.modified)) }}
+          </div>
+        </Tooltip>
+      </div>
     </div>
-    <div v-if="note.noteReplies?.length" class="ml-6 mt-2 space-y-3 border-l border-gray-200 pl-4">
-      <NoteArea :modalRef="props.modalRef" v-for="reply in note.noteReplies" :note="reply" v-model="notes" />
+
+    <!-- Replies Section -->
+    <div
+      v-if="note.noteReplies?.length"
+      class="ml-6 mt-2 space-y-3 border-l border-gray-200 pl-4"
+    >
+      <NoteArea
+        :modalRef="props.modalRef"
+        v-for="reply in note.noteReplies"
+        :key="reply.name"
+        :note="reply"
+        v-model="notes"
+      />
     </div>
   </div>
 </template>
+
 <script setup>
 import UserAvatar from '@/components/UserAvatar.vue'
-import { timeAgo, dateFormat, dateTooltipFormat } from '@/utils'
+import { timeAgo, formatDate } from '@/utils'
 import { Tooltip, Dropdown, TextEditor, call } from 'frappe-ui'
 import { usersStore } from '@/stores/users'
 import ReplyIcon from '@/components/Icons/ReplyIcon.vue'
 import { createToast } from '@/utils'
 import NoteAttachments from './NoteAttachments.vue'
 import { ref, watch, onMounted } from 'vue'
+import { globalStore } from '@/stores/global'
 
 const props = defineProps({
   note: Object,
@@ -81,9 +122,7 @@ const props = defineProps({
 })
 
 const notes = defineModel()
-
 const { getUser } = usersStore()
-
 const emit = defineEmits(['reply-note'])
 
 function replyNote() {
@@ -101,18 +140,72 @@ onMounted(() => {
         filteredAttachments.value = []
         return
       }
-      filteredAttachments.value = attachments.filter((att) => fileNames.includes(att.name))
+      filteredAttachments.value = attachments.filter((att) =>
+        fileNames.includes(att.name)
+      )
     },
-    { immediate: true },
+    { immediate: true }
   )
 })
 
-async function deleteNote(name) {
+async function reloadNotesResource() {
+  try {
+    if (notes?.value && typeof notes.value.reload === 'function') {
+      await notes.value.reload()
+    }
+  } catch (err) {
+    // ignore reload errors silently — resource may be unbound in some contexts
+    console.warn('reloadNotesResource failed', err)
+  }
+}
+
+/**
+ * Delete flow with confirmation + in-flight guard to prevent duplicates.
+ */
+const deleting = ref(false)
+const { $dialog } = globalStore()
+
+function confirmDelete(name) {
+  if (deleting.value) return
+
+  $dialog({
+    title: __('Delete Note'),
+    message: __('Are you sure you want to delete this note?'),
+    actions: [
+      {
+        label: __('Delete'),
+        theme: 'red',
+        variant: 'solid',
+        onClick: (close) => {
+          // run async delete and close dialog only after request finishes
+          performDelete(name)
+            .finally(() => {
+              try {
+                close()
+              } catch (_) {}
+            })
+        },
+      },
+      {
+        label: __('Cancel'),
+        variant: 'text',
+        onClick: (close) => close(),
+      },
+    ],
+  })
+}
+
+async function performDelete(name) {
+  if (deleting.value) return
+  deleting.value = true
   try {
     await call('next_crm.api.crm_note.delete_note', {
       note_name: name,
     })
-    notes.value?.reload()
+
+    // 🔁 Reload the bound resource (activities/notes) so UI matches backend
+    await reloadNotesResource()
+
     createToast({
       title: __('Note deleted successfully'),
       icon: 'check',
@@ -121,10 +214,28 @@ async function deleteNote(name) {
   } catch (error) {
     createToast({
       title: __('Error deleting note'),
-      text: error.message,
+      text: error?.message || String(error),
       icon: 'x',
       iconClasses: 'text-ink-red-4',
     })
+  } finally {
+    deleting.value = false
   }
 }
+
+/**
+ * Dropdown options (computed each render so it captures latest `deleting` and `note`)
+ */
+const dropdownOptions = [
+  {
+    label: __('Delete'),
+    icon: 'trash-2',
+    onClick: (e) => {
+      // access event target safely and stop propagation if present
+      try { e?.stopPropagation?.() } catch (_) {}
+      confirmDelete(props.note?.name)
+    },
+    disabled: () => deleting.value,
+  },
+]
 </script>

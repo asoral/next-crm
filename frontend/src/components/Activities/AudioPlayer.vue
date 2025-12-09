@@ -1,17 +1,20 @@
 <template>
   <div class="w-full text-sm text-ink-gray-5">
     <div class="flex items-center gap-2">
-      <Button variant="ghost" @click="playPause">
-        <template #icon>
-          <PlayIcon v-if="isPaused" class="size-4 text-ink-gray-5" />
-          <PauseIcon v-else class="size-4 text-ink-gray-5" />
-        </template>
-      </Button>
+      <!-- Play / Pause Button -->
+      <Button
+        variant="ghost"
+        class="text-ink-gray-5"
+        :icon="isPaused ? PlayIcon : PauseIcon"
+        @click="playPause"
+      />
+
+      <!-- Progress Slider + Timer -->
       <div class="flex gap-2 items-center justify-between flex-1">
         <input
           class="w-full slider !h-[0.5] bg-surface-gray-3 [&::-webkit-slider-thumb]:shadow [&::-webkit-slider-thumb:hover]:outline [&::-webkit-slider-thumb:hover]:outline-[0.5px]"
           :style="{
-            background: `linear-gradient(to right, #171717 ${progress}%, #ededed ${progress}%)`,
+            background: `linear-gradient(to right, var(--surface-gray-7, #171717) ${progress}%, var(--surface-gray-3, #ededed) ${progress}%)`,
           }"
           type="range"
           id="track"
@@ -21,8 +24,12 @@
           step="0.01"
           @input="(e) => (audio.currentTime = e.target.value)"
         />
-        <div class="shrink-0">{{ formatTime(currentTime) }} / {{ formatTime(duration) }}</div>
+        <div class="shrink-0">
+          {{ formatTime(currentTime) }} / {{ formatTime(duration) }}
+        </div>
       </div>
+
+      <!-- Volume Control + Dropdown -->
       <div class="flex items-center gap-1">
         <div class="flex group gap-2 items-center">
           <input
@@ -38,24 +45,40 @@
             step="0.01"
             @input="(e) => updateVolumnProgress(e.target.value)"
           />
-          <Button variant="ghost">
+
+          <Button variant="ghost" class="text-ink-gray-5">
             <template #icon>
-              <MuteIcon v-if="volumnProgress == 0" class="size-4" @click="updateVolumnProgress('1')" />
-              <VolumnLowIcon v-else-if="volumnProgress <= 40" class="size-4" @click="updateVolumnProgress('0')" />
-              <VolumnHighIcon v-else-if="volumnProgress > 20" class="size-4" @click="updateVolumnProgress('0')" />
+              <MuteIcon
+                v-if="volumnProgress == 0"
+                class="size-4"
+                @click.stop="updateVolumnProgress('1')"
+              />
+              <VolumnLowIcon
+                v-else-if="volumnProgress <= 40"
+                class="size-4"
+                @click.stop="updateVolumnProgress('0')"
+              />
+              <VolumnHighIcon
+                v-else
+                class="size-4"
+                @click.stop="updateVolumnProgress('0')"
+              />
             </template>
           </Button>
         </div>
+
+        <!-- Playback Speed & Download -->
         <Dropdown :options="options">
-          <Button variant="ghost" @click="showPlaybackSpeed = false">
-            <template #icon>
-              <FeatherIcon class="size-4" name="more-horizontal" />
-            </template>
-          </Button>
+          <Button
+            icon="more-horizontal"
+            variant="ghost"
+            @click="showPlaybackSpeed = false"
+          />
         </Dropdown>
       </div>
     </div>
 
+    <!-- Audio Element -->
     <audio
       ref="audio"
       :src="src"
@@ -75,7 +98,7 @@ import VolumnHighIcon from '@/components/Icons/VolumnHighIcon.vue'
 import MuteIcon from '@/components/Icons/MuteIcon.vue'
 import PlaybackSpeedIcon from '@/components/Icons/PlaybackSpeedIcon.vue'
 import PlaybackSpeedOption from '@/components/Activities/PlaybackSpeedOption.vue'
-import Dropdown from '@/components/frappe-ui/Dropdown.vue'
+import { Dropdown, Button } from 'frappe-ui'
 import { computed, h, ref } from 'vue'
 
 const props = defineProps({
@@ -84,7 +107,6 @@ const props = defineProps({
 
 const audio = ref(null)
 const isPaused = ref(true)
-
 const duration = ref(0)
 const currentTime = ref(0)
 const progress = computed(() => (currentTime.value / duration.value) * 100)
@@ -146,6 +168,7 @@ const options = computed(() => {
         }),
     }
   })
+
   let _options = [
     {
       icon: 'download',
@@ -193,17 +216,6 @@ const options = computed(() => {
 
 .slider:focus-visible {
   outline: none;
-}
-
-.slider::-webkit-slider-thumb {
-  width: var(--thumbRadius);
-  height: var(--thumbRadius);
-  margin-top: calc((var(--trackHeight) - var(--thumbRadius)) / 2);
-  background: #fff;
-  border-radius: 100px;
-  pointer-events: all;
-  appearance: none;
-  z-index: 1;
 }
 
 .slider::-webkit-slider-thumb {

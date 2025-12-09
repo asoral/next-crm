@@ -21,6 +21,7 @@
         />
       </div>
     </template>
+
     <template #actions>
       <Button
         class="w-full"
@@ -37,7 +38,13 @@
 import Link from '@/components/Controls/Link.vue'
 import Autocomplete from '@/components/frappe-ui/Autocomplete.vue'
 import { capture } from '@/telemetry'
-import { FormControl, call, createResource, TextEditor, DatePicker } from 'frappe-ui'
+import {
+  FormControl,
+  call,
+  createResource,
+  TextEditor,
+  DatePicker,
+} from 'frappe-ui'
 import { ref, computed, onMounted, h } from 'vue'
 
 const typeCheck = ['Check']
@@ -59,7 +66,6 @@ const props = defineProps({
 })
 
 const show = defineModel()
-
 const emit = defineEmits(['reload'])
 
 const fields = createResource({
@@ -74,16 +80,15 @@ const fields = createResource({
 })
 
 onMounted(() => {
-  if (fields.data?.length) return
-  fields.fetch()
+  if (!fields.data?.length) fields.fetch()
 })
 
 const recordCount = computed(() => props.selectedValues?.size || 0)
 
 const field = ref({
   label: '',
-  type: '',
-  value: '',
+  fieldtype: '',
+  fieldname: '',
   options: '',
 })
 
@@ -92,22 +97,28 @@ const loading = ref(false)
 
 function updateValues() {
   let fieldVal = newValue.value
-  if (field.value.type == 'Check') {
+
+  if (field.value.fieldtype == 'Check') {
     fieldVal = fieldVal == 'Yes' ? 1 : 0
   }
+
   loading.value = true
-  call('frappe.desk.doctype.bulk_update.bulk_update.submit_cancel_or_update_docs', {
-    doctype: props.doctype,
-    docnames: Array.from(props.selectedValues),
-    action: 'update',
-    data: {
-      [field.value.value]: fieldVal || null,
+
+  call(
+    'frappe.desk.doctype.bulk_update.bulk_update.submit_cancel_or_update_docs',
+    {
+      doctype: props.doctype,
+      docnames: Array.from(props.selectedValues),
+      action: 'update',
+      data: {
+        [field.value.fieldname]: fieldVal || null,
+      },
     },
-  }).then(() => {
+  ).then(() => {
     field.value = {
       label: '',
-      type: '',
-      value: '',
+      fieldtype: '',
+      fieldname: '',
       options: '',
     }
     newValue.value = ''
@@ -134,9 +145,11 @@ function getSelectOptions(options) {
 }
 
 function getValueComponent(f) {
-  const { type, options } = f
-  if (typeSelect.includes(type) || typeCheck.includes(type)) {
-    const _options = type == 'Check' ? ['Yes', 'No'] : getSelectOptions(options)
+  const { fieldtype, options } = f
+
+  if (typeSelect.includes(fieldtype) || typeCheck.includes(fieldtype)) {
+    const _options =
+      fieldtype == 'Check' ? ['Yes', 'No'] : getSelectOptions(options)
     return h(FormControl, {
       type: 'select',
       options: _options.map((o) => ({
@@ -145,20 +158,20 @@ function getValueComponent(f) {
       })),
       modelValue: newValue.value,
     })
-  } else if (typeLink.includes(type)) {
-    if (type == 'Dynamic Link') {
+  } else if (typeLink.includes(fieldtype)) {
+    if (fieldtype == 'Dynamic Link') {
       return h(FormControl, { type: 'text' })
     }
     return h(Link, { class: 'form-control', doctype: options })
-  } else if (typeNumber.includes(type)) {
+  } else if (typeNumber.includes(fieldtype)) {
     return h(FormControl, { type: 'number' })
-  } else if (typeDate.includes(type)) {
+  } else if (typeDate.includes(fieldtype)) {
     return h(DatePicker)
-  } else if (typeEditor.includes(type)) {
+  } else if (typeEditor.includes(fieldtype)) {
     return h(TextEditor, {
       variant: 'outline',
       editorClass:
-        '!prose-sm overflow-auto min-h-[80px] max-h-80 py-1.5 px-2 rounded border border-gray-300 bg-surface-white hover:border-gray-400 hover:shadow-sm focus:bg-surface-white focus:border-gray-500 focus:shadow-sm focus:ring-0 focus-visible:ring-2 focus-visible:ring-gray-400 text-ink-gray-8 transition-colors',
+        '!prose-sm overflow-auto min-h-[80px] max-h-80 py-1.5 px-2 rounded border border-outline-gray-2 bg-surface-white hover:border-outline-gray-3 hover:shadow-sm focus:bg-surface-white focus:border-outline-gray-4 focus:shadow-sm focus:ring-0 focus-visible:ring-2 focus-visible:ring-outline-gray-3 text-ink-gray-8 transition-colors',
       bubbleMenu: true,
       content: newValue.value,
     })

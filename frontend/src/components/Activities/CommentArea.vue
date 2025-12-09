@@ -11,18 +11,22 @@
           {{ __('comment') }}
         </span>
       </div>
+
       <div class="ml-auto whitespace-nowrap">
-        <Tooltip :text="dateFormat(activity.creation, dateTooltipFormat)">
+        <!-- ✅ Unified Tooltip with fallback handling -->
+        <Tooltip :text="safeDateTooltip(activity.creation)">
           <div class="text-sm text-ink-gray-5">
             {{ __(timeAgo(activity.creation)) }}
           </div>
         </Tooltip>
       </div>
     </div>
+
     <div
       class="cursor-pointer rounded bg-surface-gray-1 px-3 py-[7.5px] text-base leading-6 transition-all duration-300 ease-in-out"
     >
       <div class="prose-f" v-html="activity.content" />
+
       <div v-if="activity.attachments.length" class="mt-2 flex flex-wrap gap-2">
         <AttachmentItem
           v-for="a in activity.attachments"
@@ -34,13 +38,39 @@
     </div>
   </div>
 </template>
+
 <script setup>
 import UserAvatar from '@/components/UserAvatar.vue'
 import AttachmentItem from '@/components/AttachmentItem.vue'
 import { Tooltip } from 'frappe-ui'
-import { timeAgo, dateFormat, dateTooltipFormat } from '@/utils'
+import { timeAgo, formatDate } from '@/utils'
+
+// ✅ Define props
 const props = defineProps({
-  activity: Object,
+  activity: {
+    type: Object,
+    required: true,
+  },
 })
+
+// ✅ Safe date handling to prevent conflicts
+const safeDateTooltip = (date) => {
+  try {
+    // Prefer new frappe-ui formatDate
+    if (typeof formatDate === 'function') {
+      return formatDate(date)
+    }
+    // Fallback if legacy utilities exist
+    if (typeof dateFormat === 'function' && typeof dateTooltipFormat !== 'undefined') {
+      return dateFormat(date, dateTooltipFormat)
+    }
+    // Default fallback
+    return new Date(date).toLocaleString()
+  } catch (e) {
+    console.warn('Date formatting error:', e)
+    return date
+  }
+}
+
 console.log('activity', props.activity)
 </script>

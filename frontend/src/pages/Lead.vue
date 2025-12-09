@@ -1218,6 +1218,35 @@ async function convertToOpportunity() {
 
 const activities = ref(null)
 
+// --- reload watcher: reloads timeline when CommunicationArea sets `reload.value = true`
+watch(
+  () => reload.value,
+  async (val) => {
+    if (!val) return
+    console.log('Lead.vue: reload flag detected ->', val)
+    try {
+      if (activities?.value?.all_activities && typeof activities.value.all_activities.reload === 'function') {
+        await activities.value.all_activities.reload()
+        console.log('Lead.vue: activities.all_activities.reload() done')
+      } else if (activities?.value && typeof activities.value.reload === 'function') {
+        await activities.value.reload()
+        console.log('Lead.vue: activities.reload() done')
+      } else if (activities?.value && typeof activities.value.fetch === 'function') {
+        await activities.value.fetch()
+        console.log('Lead.vue: activities.fetch() done')
+      } else {
+        console.warn('Lead.vue: no reload method found on activities component - falling back to full page reload')
+        window.location.reload()
+      }
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error('Lead.vue: failed to reload activities', e)
+    } finally {
+      reload.value = false
+    }
+  },
+)
+
 function openEmailBox() {
   activities.value.emailBox.show = true
 }

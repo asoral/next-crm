@@ -1,3 +1,4 @@
+
 <template>
   <div v-if="isMobileView" class="flex flex-col justify-between gap-2 sm:px-5 px-3 py-4">
     <div class="flex flex-col gap-2">

@@ -1,7 +1,7 @@
 <template>
   <button
-    class="flex h-7 cursor-pointer items-center rounded text-ink-gray-7 duration-300 ease-in-out focus:outline-none focus:transition-none focus-visible:rounded focus-visible:ring-2 focus-visible:ring-gray-400"
-    :class="isActive ? 'bg-surface-selected shadow-sm' : 'hover:bg-surface-gray-2'"
+    class="flex h-7 cursor-pointer items-center rounded text-ink-gray-7 duration-300 ease-in-out focus:outline-none focus:transition-none focus-visible:rounded"
+    :class="[focusRingClass, isActive ? 'bg-surface-selected shadow-sm' : 'hover:bg-surface-gray-2']"
     @click="handleClick"
   >
     <div
@@ -68,6 +68,11 @@ const props = defineProps({
   isCollapsed: {
     type: Boolean,
     default: false,
+  },
+  // allow override of focus-visible ring class to avoid future merge friction
+  focusRingClass: {
+    type: String,
+    default: 'focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-outline-gray-3',
   },
 })
 

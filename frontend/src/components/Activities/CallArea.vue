@@ -10,11 +10,13 @@
         <span class="font-medium text-ink-gray-8 ml-1">
           {{ activity.caller.label }}
         </span>
-        <span>{{
-          activity.type == 'Incoming'
-            ? __('has reached out')
-            : __('has made a call')
-        }}</span>
+        <span>
+          {{
+            activity.type == 'Incoming'
+              ? __('has reached out')
+              : __('has made a call')
+          }}
+        </span>
       </div>
       <div class="ml-auto whitespace-nowrap">
         <Tooltip :text="dateFormat(activity.creation, dateTooltipFormat)">
@@ -24,6 +26,7 @@
         </Tooltip>
       </div>
     </div>
+
     <div
       class="flex flex-col gap-2 border border-gray-200 rounded-md bg-surface-white px-3 py-2.5 text-ink-gray-9"
     >
@@ -55,41 +58,51 @@
           />
         </div>
       </div>
+
       <div class="flex items-center flex-wrap gap-2">
         <Badge :label="dateFormat(activity.creation, 'MMM D, dddd')">
           <template #prefix>
             <CalendarIcon class="size-3" />
           </template>
         </Badge>
-        <Badge v-if="activity.status == 'Completed'" :label="activity.duration">
+
+        <Badge
+          v-if="activity.status == 'Completed'"
+          :label="activity.duration"
+        >
           <template #prefix>
             <DurationIcon class="size-3" />
           </template>
         </Badge>
+
         <Badge
           v-if="activity.recording_url"
           :label="activity.show_recording ? __('Hide Recording') : __('Listen')"
           class="cursor-pointer"
-          @click="activity.show_recording = !activity.show_recording"
+          @click.stop="activity.show_recording = !activity.show_recording"
         >
           <template #prefix>
             <PlayIcon class="size-3" />
           </template>
         </Badge>
+
         <Badge
           :label="statusLabelMap[activity.status]"
           :theme="statusColorMap[activity.status]"
         />
       </div>
+
       <div
         v-if="activity.show_recording && activity.recording_url"
         class="flex flex-col items-center justify-between"
+        @click.stop
       >
         <AudioPlayer :src="activity.recording_url" />
       </div>
     </div>
   </div>
 </template>
+
 <script setup>
 import PlayIcon from '@/components/Icons/PlayIcon.vue'
 import CalendarIcon from '@/components/Icons/CalendarIcon.vue'
