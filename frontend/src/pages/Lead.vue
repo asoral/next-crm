@@ -663,7 +663,6 @@ import { globalStore } from '@/stores/global'
 import { statusesStore } from '@/stores/statuses'
 import { usersStore } from '@/stores/users'
 import { whatsappEnabled, callEnabled } from '@/composables/settings'
-import { capture } from '@/telemetry'
 import {
   createResource,
   FileUploader,
@@ -1209,7 +1208,6 @@ async function convertToOpportunity() {
   })
 
   if (opportunity) {
-    capture('convert_lead_to_opportunity')
     
     router.push({ name: 'Opportunity', params: { opportunityId: opportunity } })
   }

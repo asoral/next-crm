@@ -166,7 +166,6 @@ import { Device } from '@twilio/voice-sdk'
 import { useDraggable, useWindowSize } from '@vueuse/core'
 import { globalStore } from '@/stores/global'
 
-import { capture } from '@/telemetry'
 import { Avatar, call } from 'frappe-ui'
 import { onMounted, ref, watch } from 'vue'
 
@@ -352,7 +351,6 @@ async function makeOutgoingCall(number) {
       showCallPopup.value = true
       callStatus.value = 'initiating'
 
-      capture('make_outgoing_call')
 
       _call.on('messageReceived', (message) => {
         let info = message.content

@@ -36,7 +36,6 @@
 <script setup>
 import Link from '@/components/Controls/Link.vue'
 import Autocomplete from '@/components/frappe-ui/Autocomplete.vue'
-import { capture } from '@/telemetry'
 import { FormControl, call, createResource, TextEditor, DatePicker } from 'frappe-ui'
 import { ref, computed, onMounted, h } from 'vue'
 
@@ -113,7 +112,6 @@ function updateValues() {
     newValue.value = ''
     loading.value = false
     show.value = false
-    capture('bulk_update', { doctype: props.doctype })
     emit('reload')
   })
 }

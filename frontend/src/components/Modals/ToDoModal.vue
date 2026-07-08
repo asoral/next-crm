@@ -156,7 +156,6 @@ import UserAvatar from '@/components/UserAvatar.vue'
 import Link from '@/components/Controls/Link.vue'
 import { todoStatusOptions, todoPriorityOptions } from '@/utils'
 import { usersStore } from '@/stores/users'
-import { capture } from '@/telemetry'
 import { TextEditor, Dropdown, Tooltip, call, DatePicker, TextInput } from 'frappe-ui'
 import { ref, watch, nextTick, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
@@ -303,7 +302,6 @@ if (refType && refName) {
         },
       })
       if (d.name) {
-        capture('todo_created')
         todos.value.reload()
         emit('after')
         const refType = _todo.value.reference_type || props.doctype

@@ -6,7 +6,6 @@ import { createDialog } from './utils/dialogs'
 import { initSocket } from './socket'
 import router from './router'
 import translationPlugin from './translation'
-import { posthogPlugin } from './telemetry'
 import App from './App.vue'
 // import { IonicVue } from "@ionic/vue";
 
@@ -52,7 +51,6 @@ app.use(FrappeUI)
 app.use(pinia)
 app.use(router)
 app.use(translationPlugin)
-app.use(posthogPlugin)
 app.provide("$dayjs", dayjs);
 
 for (let key in globalComponents) {

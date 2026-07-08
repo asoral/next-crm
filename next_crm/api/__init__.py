@@ -3,7 +3,6 @@ from bs4 import BeautifulSoup
 from frappe.core.api.file import get_max_file_size
 from frappe.translate import get_all_translations
 from frappe.utils import cstr
-from frappe.utils.telemetry import POSTHOG_HOST_FIELD, POSTHOG_PROJECT_FIELD
 
 
 @frappe.whitelist(allow_guest=True)
@@ -54,8 +53,6 @@ def get_posthog_settings():
     return {
         "posthog_project_id": frappe.conf.get(POSTHOG_PROJECT_FIELD),
         "posthog_host": frappe.conf.get(POSTHOG_HOST_FIELD),
-        "enable_telemetry": frappe.get_system_settings("enable_telemetry"),
-        "telemetry_site_age": frappe.utils.telemetry.site_age(),
     }
 
 

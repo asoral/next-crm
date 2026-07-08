@@ -183,7 +183,6 @@ import Link from '@/components/Controls/Link.vue'
 import MultiValueInput from '../Controls/MultiValueInput.vue'
 import { eventStatusOptions, createToast } from '@/utils'
 import { usersStore } from '@/stores/users'
-import { capture } from '@/telemetry'
 import { TextEditor, Dropdown, FormControl, Tooltip, call, TextInput } from 'frappe-ui'
 import { ref, watch, nextTick, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
@@ -388,7 +387,6 @@ else {
 
   let d = await call('frappe.client.insert', { doc })
   if (d.name) {
-    capture('event_created')
     events.value.reload()
     emit('after')
   }

@@ -132,7 +132,6 @@ import DoubleCheckIcon from '@/components/Icons/DoubleCheckIcon.vue'
 import DocumentIcon from '@/components/Icons/DocumentIcon.vue'
 import ReactIcon from '@/components/Icons/ReactIcon.vue'
 import { dateFormat } from '@/utils'
-import { capture } from '@/telemetry'
 import { Tooltip, Dropdown, createResource } from 'frappe-ui'
 import { ref } from 'vue'
 
@@ -181,7 +180,6 @@ function reactOnMessage(name, emoji) {
     },
     auto: true,
     onSuccess() {
-      capture('whatsapp_react_on_message')
       list.value.reload()
     },
   })

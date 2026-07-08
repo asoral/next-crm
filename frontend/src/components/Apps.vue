@@ -38,7 +38,6 @@
 import AppsIcon from '@/components/Icons/AppsIcon.vue'
 import { Popover, createResource } from 'frappe-ui'
 import { onUnmounted } from 'vue'
-import { stopRecording } from '@/telemetry'
 
 const props = defineProps({
   active: Boolean,
@@ -72,6 +71,5 @@ const apps = createResource({
 })
 
 onUnmounted(() => {
-  stopRecording()
 })
 </script>

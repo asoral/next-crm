@@ -36,7 +36,6 @@
 import Fields from '@/components/Fields.vue'
 import QuickEntryLayoutBuilder from '@/components/QuickEntryLayoutBuilder.vue'
 import { useDebounceFn } from '@vueuse/core'
-import { capture } from '@/telemetry'
 import { Dialog, Badge, Switch, call, createResource } from 'frappe-ui'
 import { ref, watch, onMounted, nextTick } from 'vue'
 
@@ -97,7 +96,6 @@ function saveChanges() {
   }).then(() => {
     loading.value = false
     show.value = false
-    capture('quick_entry_layout_builder', { doctype: _doctype.value })
   })
 }
 </script>
