@@ -93,7 +93,6 @@ import { visible, notifications, notificationsStore } from '@/stores/notificatio
 import { globalStore } from '@/stores/global'
 import { timeAgo, createToast } from '@/utils'
 import { onClickOutside } from '@vueuse/core'
-import { capture } from '@/telemetry'
 import { Tooltip, call } from 'frappe-ui'
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 
@@ -112,12 +111,10 @@ onClickOutside(
 )
 
 function markAsRead(doc) {
-  capture('notification_mark_as_read')
   mark_doc_as_read(doc)
 }
 
 function markAllAsRead() {
-  capture('notification_mark_all_as_read')
   mark_as_read.reload()
 }
 

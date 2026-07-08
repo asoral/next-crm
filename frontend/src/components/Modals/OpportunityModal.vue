@@ -46,7 +46,6 @@ import EditIcon from '@/components/Icons/EditIcon.vue'
 import Fields from '@/components/Fields.vue'
 import { usersStore } from '@/stores/users'
 import { statusesStore } from '@/stores/statuses'
-import { capture } from '@/telemetry'
 import { Switch, createResource } from 'frappe-ui'
 import { computed, ref, reactive, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
@@ -182,7 +181,6 @@ function createOpportunity() {
       isOpportunityCreating.value = true
     },
     onSuccess(name) {
-      capture('opportunity_created')
       isOpportunityCreating.value = false
       show.value = false
       router.push({ name: 'Opportunity', params: { opportunityId: name } })

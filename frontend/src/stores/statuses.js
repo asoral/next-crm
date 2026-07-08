@@ -1,5 +1,4 @@
 import IndicatorIcon from '@/components/Icons/IndicatorIcon.vue'
-import { capture } from '@/telemetry'
 import { defineStore } from 'pinia'
 import { createListResource } from 'frappe-ui'
 import { reactive, h } from 'vue'
@@ -112,7 +111,6 @@ export const statusesStore = defineStore('crm-statuses', () => {
             class: statusesByName[status]?.iconColorClass,
           }),
         onClick: () => {
-          capture('status_changed', { doctype, status })
           action && action('status', statusesByName[status]?.name)
         },
       })

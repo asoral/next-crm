@@ -133,7 +133,6 @@ import AttachmentItem from '@/components/AttachmentItem.vue'
 import MultiselectInput from '@/components/Controls/MultiselectInput.vue'
 import EmailTemplateSelectorModal from '@/components/Modals/EmailTemplateSelectorModal.vue'
 import { TextEditorBubbleMenu, TextEditor, FileUploader, call } from 'frappe-ui'
-import { capture } from '@/telemetry'
 import { validateEmail } from '@/utils'
 import Paragraph from '@tiptap/extension-paragraph'
 import { EditorContent } from '@tiptap/vue-3'
@@ -229,14 +228,12 @@ async function applyEmailTemplate(template) {
     editor.value.commands.setContent(data.message)
   }
   showEmailTemplateSelectorModal.value = false
-  capture('email_template_applied', { doctype: props.doctype })
 }
 
 function appendEmoji() {
   editor.value.commands.insertContent(emoji.value)
   editor.value.commands.focus()
   emoji.value = ''
-  capture('emoji_inserted_in_email', { emoji: emoji.value })
 }
 
 function toggleCC() {
