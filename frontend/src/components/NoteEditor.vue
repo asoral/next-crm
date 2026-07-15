@@ -67,7 +67,6 @@ import IconPicker from '@/components/IconPicker.vue'
 import SmileIcon from '@/components/Icons/SmileIcon.vue'
 import AttachmentIcon from '@/components/Icons/AttachmentIcon.vue'
 import { usersStore } from '@/stores/users'
-import { capture } from '@/telemetry'
 import AttachmentArea from './Activities/AttachmentArea.vue'
 import FilesUploader from '@/components/FilesUploader/FilesUploader.vue'
 
@@ -119,7 +118,6 @@ watch(
 function appendEmoji() {
   editor.value?.commands.insertContent(emoji.value)
   editor.value?.commands.focus()
-  capture('emoji_inserted_in_note', { emoji: emoji.value })
   emoji.value = ''
 }
 

@@ -373,7 +373,6 @@ import { usersStore } from '@/stores/users'
 import { isMobileView } from '@/composables/settings'
 
 import { whatsappEnabled } from '@/composables/settings'
-import { capture } from '@/telemetry'
 import { Button, Tooltip, createResource } from 'frappe-ui'
 import { useElementVisibility } from '@vueuse/core'
 import { ref, computed, h, markRaw, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
@@ -449,7 +448,6 @@ onMounted(() => {
 
 function sendTemplate(template) {
   showWhatsappTemplates.value = false
-  capture('send_whatsapp_template', { doctype: props.doctype })
   createResource({
     url: 'next_crm.api.whatsapp.send_whatsapp_template',
     params: {

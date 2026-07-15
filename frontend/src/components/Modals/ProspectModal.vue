@@ -36,7 +36,6 @@ import EditIcon from '@/components/Icons/EditIcon.vue'
 import Fields from '@/components/Fields.vue'
 import { usersStore } from '@/stores/users'
 import { statusesStore } from '@/stores/statuses'
-import { capture } from '@/telemetry'
 import { createResource } from 'frappe-ui'
 import { computed, onMounted, ref, reactive, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
@@ -133,7 +132,6 @@ function createNewProspect() {
       isProspectCreating.value = true
     },
     onSuccess(data) {
-      capture('prospect_created')
       isProspectCreating.value = false
       show.value = false
       router.push({ name: 'Prospect', params: { prospectId: data.name } })

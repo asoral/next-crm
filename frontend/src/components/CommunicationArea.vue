@@ -127,7 +127,6 @@ import CommentBox from '@/components/CommentBox.vue'
 import CommentIcon from '@/components/Icons/CommentIcon.vue'
 import Email2Icon from '@/components/Icons/Email2Icon.vue'
 import NoteIcon from '@/components/Icons/NoteIcon.vue'
-import { capture } from '@/telemetry'
 import { usersStore } from '@/stores/users'
 import { useStorage } from '@vueuse/core'
 import { call, createResource } from 'frappe-ui'
@@ -231,7 +230,6 @@ async function sendMail() {
   }
 
   if (attachments.value.length) {
-    capture('email_attachments_added')
   }
   try {
     await call('frappe.core.doctype.communication.email.make', {
@@ -269,7 +267,6 @@ async function sendComment() {
     comment_by: getUser()?.full_name || undefined,
   })
   if (comment && attachments.value.length) {
-    capture('comment_attachments_added')
     await call('next_crm.api.comment.add_attachments', {
       name: comment.name,
       attachments: attachments.value.map((x) => x.name),
@@ -298,7 +295,6 @@ async function submitEmail() {
   newEmail.value = ''
   reload.value = true
   emit('scroll')
-  capture('email_sent', { doctype: props.doctype })
 }
 
 async function submitComment() {
@@ -308,7 +304,6 @@ async function submitComment() {
   newComment.value = ''
   reload.value = true
   emit('scroll')
-  capture('comment_sent', { doctype: props.doctype })
 }
 
 function toggleEmailBox() {
@@ -363,7 +358,6 @@ async function submitNote() {
   newAttachments.value = []
   reload.value = true
   emit('scroll')
-  capture('note_sent', { doctype: props.doctype })
   createToast({
     title: __('Note reply added.'),
     icon: 'check',

@@ -81,7 +81,6 @@
 
 <script setup>
 import ArrowUpRightIcon from '@/components/Icons/ArrowUpRightIcon.vue'
-import { capture } from '@/telemetry'
 import { TextEditor, call } from 'frappe-ui'
 import { ref, computed, nextTick, watch, h, watchEffect } from 'vue'
 import { useRouter } from 'vue-router'
@@ -179,7 +178,6 @@ async function updateNote() {
         attachments: filteredAttachments.value.map((att) => att.name),
       })
       if (d.name) {
-        capture('note_created')
         notes.value?.reload()
         emit('after', d, true)
       }

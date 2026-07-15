@@ -264,8 +264,7 @@
   import CustomerModal from '@/components/Modals/CustomerModal.vue'
   import { h, computed, ref } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
-  import { capture } from '@/telemetry'
-  
+    
   const props = defineProps({
     prospectId: {
       type: String,
@@ -647,7 +646,6 @@ async function afterAddAddress(address) {
         },
       )
       if (opportunity) {
-        capture('create_prospect_from_opportunity')
         router.push({ name: 'Opportunity', params: { opportunityId: opportunity } })
       }
   }

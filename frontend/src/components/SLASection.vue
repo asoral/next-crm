@@ -45,7 +45,6 @@
 import { Dropdown, Tooltip } from 'frappe-ui'
 import { timeAgo, dateFormat, formatTime, dateTooltipFormat } from '@/utils'
 import { statusesStore } from '@/stores/statuses'
-import { capture } from '@/telemetry'
 import { computed, defineModel } from 'vue'
 
 const data = defineModel()
@@ -98,7 +97,6 @@ let slaSection = computed(() => {
           label: status.name,
           value: status.name,
           onClick: () => {
-            capture('sla_status_change')
             emit('updateField', 'communication_status', status.name)
           },
         })),

@@ -39,7 +39,6 @@
           () => {
             content += emoji
             $refs.textareaRef.el.focus()
-            capture('whatsapp_emoji_added')
           }
         "
       >
@@ -66,7 +65,6 @@
 <script setup>
 import IconPicker from '@/components/IconPicker.vue'
 import SmileIcon from '@/components/Icons/SmileIcon.vue'
-import { capture } from '@/telemetry'
 import { createResource, Textarea, FileUploader, Dropdown } from 'frappe-ui'
 import { ref, nextTick, watch } from 'vue'
 
@@ -93,7 +91,6 @@ function uploadFile(file) {
   whatsapp.value.attach = file.file_url
   whatsapp.value.content_type = fileType.value
   sendWhatsAppMessage()
-  capture('whatsapp_upload_file')
 }
 
 function sendTextMessage(event) {
@@ -101,7 +98,6 @@ function sendTextMessage(event) {
   sendWhatsAppMessage()
   textareaRef.value.el?.blur()
   content.value = ''
-  capture('whatsapp_send_message')
 }
 
 async function sendWhatsAppMessage() {
