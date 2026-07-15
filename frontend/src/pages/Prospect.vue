@@ -264,7 +264,7 @@
   import CustomerModal from '@/components/Modals/CustomerModal.vue'
   import { h, computed, ref } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
-  
+    
   const props = defineProps({
     prospectId: {
       type: String,

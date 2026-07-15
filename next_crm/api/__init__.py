@@ -1,10 +1,13 @@
+# pyrefly: ignore [missing-import]
 import frappe
+# pyrefly: ignore [missing-import]
 from bs4 import BeautifulSoup
+# pyrefly: ignore [missing-import]
 from frappe.core.api.file import get_max_file_size
+# pyrefly: ignore [missing-import]
 from frappe.translate import get_all_translations
+# pyrefly: ignore [missing-import]
 from frappe.utils import cstr
-
-
 @frappe.whitelist(allow_guest=True)
 def get_translations():
     if frappe.session.user != "Guest":
@@ -51,8 +54,10 @@ def get_user_signature():
 @frappe.whitelist()
 def get_posthog_settings():
     return {
-        "posthog_project_id": frappe.conf.get(POSTHOG_PROJECT_FIELD),
-        "posthog_host": frappe.conf.get(POSTHOG_HOST_FIELD),
+        "posthog_project_id": None,
+        "posthog_host": None,
+        "enable_telemetry": False,
+        "telemetry_site_age": 0,
     }
 
 

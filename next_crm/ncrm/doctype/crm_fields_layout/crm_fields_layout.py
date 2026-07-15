@@ -3,8 +3,11 @@
 
 import json
 
+# pyrefly: ignore [missing-import]
 import frappe
+# pyrefly: ignore [missing-import]
 from frappe import _
+# pyrefly: ignore [missing-import]
 from frappe.model.document import Document
 
 
@@ -33,26 +36,29 @@ def get_fields_layout(doctype: str, type: str):
     fields = [field for field in fields if field.fieldname in allowed_fields]
 
     for section in sections:
-        for field in section.get("fields") if section.get("fields") else []:
-            field = next((f for f in fields if f.fieldname == field), None)
+        for field_name in section.get("fields") if section.get("fields") else []:
+            field = next((f for f in fields if f.fieldname == field_name), None)
             if field:
-                if field.fieldtype == "Select" and field.options:
-                    field.options = field.options.split("\n")
-                    field.options = [
+                options = field.options
+                if field.fieldtype == "Select" and options:
+                    if isinstance(options, str):
+                        options = options.split("\n")
+                    options = [
                         {"label": _(option), "value": option}
-                        for option in field.options
+                        for option in options
                     ]
-                    field.options.insert(0, {"label": "", "value": ""})
-                field = {
+                    options.insert(0, {"label": "", "value": ""})
+                
+                field_dict = {
                     "label": _(field.label),
                     "name": field.fieldname,
                     "type": field.fieldtype,
-                    "options": field.options,
+                    "options": options,
                     "mandatory": field.reqd,
                     "placeholder": field.get("placeholder"),
                     "filters": field.get("link_filters"),
                 }
-                section["fields"][section.get("fields").index(field["name"])] = field
+                section["fields"][section.get("fields").index(field_name)] = field_dict
 
     return sections or []
 
